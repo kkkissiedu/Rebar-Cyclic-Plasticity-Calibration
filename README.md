@@ -23,6 +23,14 @@ Chaboche model transferred into a full ABAQUS coupon simulation, 2% strain
 amplitude - surrogate 69.2 MPa vs FE 61.1 MPa objective, essentially the same
 fit.</em></p>
 
+<p align="center">
+  <img src="figures/abaqus-deformed-mesh-mises.png" width="70%" alt="ABAQUS coupon, deformed shape, Mises stress contour">
+</p>
+
+<p align="center"><em>The same job's deformed mesh in ABAQUS/CAE, contoured by
+Mises stress (deformation scale exaggerated to make the shape change visible -
+at true scale a 2% axial strain looks like a straight cylinder).</em></p>
+
 ## Why this exists
 
 Constitutive-model calibration is usually reported as a single number (RMSE)
