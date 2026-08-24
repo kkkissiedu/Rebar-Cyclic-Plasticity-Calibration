@@ -60,18 +60,18 @@ MAX_SATURATION_FACTOR: float = 1.6
 DEFAULT_MIN_YIELD_FRACTION: float = 0.35
 
 #: Absolute backstop the GUI can never go below, even if the user lowers
-#: min_yield_fraction — guards against a degenerate "no yield left" fit.
+#: min_yield_fraction - guards against a degenerate "no yield left" fit.
 ABSOLUTE_MIN_YIELD_FRACTION: float = 0.15
 
 #: Minimum ratio gamma_k / gamma_{k+1} between successive backstresses.
 #: Chaboche's multi-kinematic decomposition (Chaboche 1986, Int. J.
 #: Plasticity 2, Eq. 5: sum of N Armstrong-Frederick terms) is only
-#: meaningful when each term covers a DISTINCT strain-range scale — term 1
+#: meaningful when each term covers a DISTINCT strain-range scale - term 1
 #: fast/near-yield, later terms progressively slower. Bari & Hassan 2000
 #: (Int. J. Plasticity 16, Sec. 4) calibrate with roughly decade-separated
 #: gammas. Without a floor on the ratio the optimiser can collapse all
 #: gammas to one value (observed: three gammas = 75.16 on 2data), which is
-#: an over-parameterised single backstress. Ratio, not absolute — grade-
+#: an over-parameterised single backstress. Ratio, not absolute - grade-
 #: agnostic by construction.
 MIN_GAMMA_RATIO: float = 3.0
 
@@ -198,7 +198,7 @@ class PhysicsGate:
         This is the mechanism the optimiser uses instead of hard rejection: a
         rejected candidate returning a constant PENALTY gives the optimiser a
         flat landscape (it locks onto the first sampled point). Projecting keeps
-        *every* evaluation meaningful — the search explores the whole box while
+        *every* evaluation meaningful - the search explores the whole box while
         only ever simulating physically consistent parameters.
 
         Repairs, in order (each is idempotent, so projecting a feasible point

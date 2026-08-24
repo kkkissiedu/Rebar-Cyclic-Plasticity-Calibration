@@ -4,8 +4,8 @@ session/checkpoint.py
 
 Low-level, crash-safe persistence primitives used by the session manager.
 
-* :class:`CSVLogger` — append-only evaluation log, thread-safe.
-* :func:`atomic_write_json` / :func:`load_json` — checkpoint state with an
+* :class:`CSVLogger` - append-only evaluation log, thread-safe.
+* :func:`atomic_write_json` / :func:`load_json` - checkpoint state with an
   atomic replace and a retry loop (Windows/OneDrive can transiently lock a file
   while syncing, so a naive ``os.replace`` occasionally raises PermissionError).
 
@@ -33,7 +33,7 @@ class CSVLogger:
     """Append-only evaluation log with a header, guarded by a lock.
 
     Parameters vary in count across models, so they are stored as a JSON blob in
-    the ``params_json`` column rather than fixed C1..b columns — this keeps the
+    the ``params_json`` column rather than fixed C1..b columns - this keeps the
     log schema stable whether the model has 6, 8 or 10 parameters.
     """
 

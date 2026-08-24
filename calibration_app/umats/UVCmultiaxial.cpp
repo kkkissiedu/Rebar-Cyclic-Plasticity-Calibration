@@ -1,12 +1,12 @@
 /* ==========================================================================
- * UVCmultiaxial.cpp — Updated Voce-Chaboche 3D UMAT (C++ / MSVC build)
+ * UVCmultiaxial.cpp - Updated Voce-Chaboche 3D UMAT (C++ / MSVC build)
  * ==========================================================================
  *
  * C++ port of UVCmultiaxial.for (Hartloper, de Castro e Sousa & Lignos 2021,
  * J. Struct. Eng., doi:10.1061/(ASCE)ST.1943-541X.0002964; original UMAT
- * MIT-licensed, github.com/ahartloper/UVC_MatMod — UVC_LICENSE_MIT.txt).
+ * MIT-licensed, github.com/ahartloper/UVC_MatMod - UVC_LICENSE_MIT.txt).
  * Used by "Transfer to CAE" for the full C3D8R coupon (the FE search backend
- * uses the uniaxial UVCuniaxial.cpp on a T3D2 truss instead — faster and
+ * uses the uniaxial UVCuniaxial.cpp on a T3D2 truss instead - faster and
  * exactly equal to the surrogate).
  *
  * Constitutive model (J2 plasticity, radial return; paper Eq. 1-5):
@@ -24,7 +24,7 @@
  *     Fortran-runtime link dependencies);
  *   - gamma_k ~ 0 handled by the linear limit instead of dividing by g_k.
  *
- * PROPS (nprops = 7 + 2N — note nu, unlike the uniaxial card):
+ * PROPS (nprops = 7 + 2N - note nu, unlike the uniaxial card):
  *   1: E  2: nu  3: sy0  4: Q  5: b  6: D  7: a  8..: C_k, gamma_k pairs
  * STATEV (nstatv = 7 + 6N):
  *   1: p, 2-7: plastic strain (engineering shears), 8..: a_k (6 each)

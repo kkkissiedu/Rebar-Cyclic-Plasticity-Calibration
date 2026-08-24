@@ -1,5 +1,5 @@
 /* ==========================================================================
- * OhnoWang.cpp — Ohno-Wang model I uniaxial UMAT (C++ / MSVC build)
+ * OhnoWang.cpp - Ohno-Wang model I uniaxial UMAT (C++ / MSVC build)
  * ==========================================================================
  *
  * Ohno & Wang 1993, "Kinematic hardening rules with critical state of
@@ -23,7 +23,7 @@
  *
  * Integration: per substep, radial return with flow direction fixed at the
  * elastic trial; dp solved by Newton on isotropic consistency with the
- * backstress frozen; then one explicit Eq. 10 backstress step — identical
+ * backstress frozen; then one explicit Eq. 10 backstress step - identical
  * to the surrogate. Substep size limit 1e-4 strain (OW_SUBSTEP_EPS, same
  * constant as the surrogate's _OW_SUBSTEP_EPS) keeps the explicit
  * backstress integration within ~2 MPa of the converged ODE solution.
@@ -170,7 +170,7 @@ extern "C" void FOR_NAME(umat, UMAT)(
         ddsdde[0] = E;
     } else {
         /* elastoplastic tangent E*A/(E+A); A may be negative (cyclic
-         * softening, Q < 0) — guard the denominator, floor the magnitude
+         * softening, Q < 0) - guard the denominator, floor the magnitude
          * so ABAQUS's Newton stays bounded */
         const double den = E + A_last;
         double t = (fabs(den) > 1.0e-3 * E) ? (E * A_last / den)

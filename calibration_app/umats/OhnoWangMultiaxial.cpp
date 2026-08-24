@@ -1,5 +1,5 @@
 /* ==========================================================================
- * OhnoWangMultiaxial.cpp — Ohno-Wang model I 3D UMAT (C++ / MSVC build)
+ * OhnoWangMultiaxial.cpp - Ohno-Wang model I 3D UMAT (C++ / MSVC build)
  * ==========================================================================
  *
  * Ohno & Wang 1993, Int. J. Plasticity 9(3):375-390,
@@ -8,7 +8,7 @@
  * 2010, doi:10.1016/j.ijpvp.2010.02.003; Q = 0 recovers pure OW-I).
  * Written for this project; used by "Transfer to CAE" for the full C3D8R
  * coupon (the FE search backend uses the uniaxial OhnoWang.cpp on a T3D2
- * truss — exactly equal to the surrogate).
+ * truss - exactly equal to the surrogate).
  *
  * Multiaxial kinematic rule, written so that its uniaxial reduction is
  * IDENTICAL to the calibrated uniaxial law in core/ohno_wang_model.py
@@ -23,9 +23,9 @@
  * fixed at the trial -> scalar Newton for the plastic multiplier with
  * backstress frozen (isotropic consistency) -> one explicit Eq. 10
  * backstress step. Approximate elastoplastic tangent (radial-return
- * structure) — ABAQUS just takes a few more equilibrium iterations.
+ * structure) - ABAQUS just takes a few more equilibrium iterations.
  *
- * PROPS (nprops = 5 + 3N — note nu, unlike the uniaxial card):
+ * PROPS (nprops = 5 + 3N - note nu, unlike the uniaxial card):
  *   1: E  2: nu  3: sy0  4: Q  5: b  6..: C_k, r_k, m_k triplets
  * STATEV (nstatv = 7 + 6N):
  *   1: p, 2-7: plastic strain (engineering shears), 8..: a_k (6 each)
@@ -263,7 +263,7 @@ extern "C" void FOR_NAME(umat, UMAT)(
         for (i = 0; i < 6; ++i) statev[7 + 6 * k + i] = ak[k][i];
 
     /* tangent: elastic, or radial-return structure with the last substep's
-     * hardening modulus (approximate — stress is exact, ABAQUS's global
+     * hardening modulus (approximate - stress is exact, ABAQUS's global
      * Newton just converges a little slower than with a consistent one) */
     if (!any_plastic) {
         for (i = 0; i < 6; ++i)

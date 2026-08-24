@@ -6,7 +6,7 @@ The single objective function shared by **every** backend and optimiser.
 
 Why this matters
 ----------------
-The study compares four conditions — Surrogate+DE, Surrogate+Bayesian, FE+DE,
+The study compares four conditions - Surrogate+DE, Surrogate+Bayesian, FE+DE,
 FE+Bayesian. For that comparison to be clean, the *scoring* of a stress-strain
 response must be byte-for-byte identical regardless of where the response came
 from. So the low-level scorer :func:`score_hysteresis` takes only arrays
@@ -105,7 +105,7 @@ def evaluate_surrogate(
 
     Runs the model over the (optional) burn-in cycle-1 path plus the scoring
     window so the state (backstresses, accumulated plastic strain) is conditioned
-    before scoring starts at cycle 2 — this removes the artificial cycle-2
+    before scoring starts at cycle 2 - this removes the artificial cycle-2
     overshoot that a virgin start produces.
 
     Parameters

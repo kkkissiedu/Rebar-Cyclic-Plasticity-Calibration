@@ -6,7 +6,7 @@ FE-in-the-loop evaluation backend.
 
 For each candidate parameter set this writes a small single-element uniaxial
 ABAQUS deck (axial along Z to match the real specimen, so it records **S33/E33**
-— NOT the S22/E22 the legacy extractor wrongly used), submits it, extracts the
+- NOT the S22/E22 the legacy extractor wrongly used), submits it, extracts the
 mid-point stress-strain history from the ODB, and scores it with the *same*
 objective the surrogate backend uses (`objective.score_from_abaqus`).
 
@@ -15,7 +15,7 @@ The single-element mesh is used during the search for speed; the full cylinder
 run triggered separately from the GUI.
 
 Nothing here is model-specific beyond asking the model for its
-``material_block`` — so UVC / Ohno-Wang (UMAT) decks drop in unchanged once
+``material_block`` - so UVC / Ohno-Wang (UMAT) decks drop in unchanged once
 those models exist, because ``material_block`` emits the right ``*USER MATERIAL``
 block for them.
 
@@ -461,7 +461,7 @@ class FEBackend:
         return scored[:, 1], scored[:, 2]    # strain, stress (scored cycles only)
 
     def evaluate(self, params: Sequence[float], sy0: float = None) -> float:
-        """Objective for one candidate — the callable handed to the optimiser.
+        """Objective for one candidate - the callable handed to the optimiser.
 
         Uses the identical scorer as the surrogate backend so the four study
         conditions are directly comparable. ``sy0`` overrides the yield stress

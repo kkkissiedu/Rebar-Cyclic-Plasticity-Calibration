@@ -16,7 +16,7 @@ Message contract (put on ``gui_queue`` as ``(kind, payload)``)::
     ("done",    {})
 
 Live-plot curves are always rendered with the (fast) surrogate of the active
-model — even when the FE backend is scoring — so plotting stays cheap and both
+model - even when the FE backend is scoring - so plotting stays cheap and both
 backends show progress the same way.
 
 Backend selection:

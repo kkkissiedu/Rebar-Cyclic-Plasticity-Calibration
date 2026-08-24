@@ -1,4 +1,4 @@
-# Literature Review — Model & Algorithm Selection for Rebar LCF Calibration
+# Literature Review - Model & Algorithm Selection for Rebar LCF Calibration
 
 **Prepared:** 2026-07-02, as the evidence base for the model/algorithm choices
 implemented in this repository (see `README.md`). Companion dataset summary:
@@ -30,7 +30,7 @@ did not return, and gaps are marked "not found" rather than filled in.
    B500C-specific point values** (no directly-calibrated B500C Chaboche set was
    found in full text).
 4. **Kashani 2019 remains an adequate dataset.** Two newer candidates are
-   flagged (Moodley et al. 2026 — tests B500C directly; Egger et al. 2021 — 1–5%
+   flagged (Moodley et al. 2026 - tests B500C directly; Egger et al. 2021 - 1–5%
    amplitude, cleaner strain data) but **no switch is recommended**.
    **Confidence: MEDIUM-HIGH.**
 5. **A ~67 MPa tension/compression asymmetry in the data is unmodelable by any
@@ -51,14 +51,14 @@ did not return, and gaps are marked "not found" rather than filled in.
 | Bari-Hassan (2000/02) | ~Chaboche + 1 | NO (UMAT) | Not found | Multiaxial only | HIGH |
 | **Updated Voce-Chaboche (UVC)** (Hartloper/Lignos 2021) | 3 backstress + updated Voce | NO (open-source UMAT) | Structural steel (not rebar) | Fixes yield-plateau + 10–30% yield underestimate | HIGH |
 | Memory-surface Chaboche (2025) | Chaboche + surface | NO (UMAT) | Structural steel | Fixes non-saturating isotropic term | HIGH |
-| Rebar uniaxial laws (Steel02, Hysteretic, ReinforcingSteel + fatigue) | varies | N/A (OpenSees) | **Yes — dominant rebar practice** | Not 3-D; not ABAQUS; different tool | HIGH |
+| Rebar uniaxial laws (Steel02, Hysteretic, ReinforcingSteel + fatigue) | varies | N/A (OpenSees) | **Yes - dominant rebar practice** | Not 3-D; not ABAQUS; different tool | HIGH |
 
 **Key facts.**
 - *Only classic Chaboche is native to ABAQUS.* Switching model means writing/
-  validating a UMAT — significant cost and a new verification burden. (HIGH)
+  validating a UMAT - significant cost and a new verification burden. (HIGH)
 - The rebar-specific literature (Kashani, Tripathi & Dhakal, Moodley et al.)
   overwhelmingly uses **OpenSees uniaxial laws, not 3-D Chaboche.** So there is
-  no published B500C Chaboche calibration to benchmark against — this project
+  no published B500C Chaboche calibration to benchmark against - this project
   sits at the intersection of two mature-but-separate literatures. (HIGH)
 - **UVC is the most credible alternative** (open-source UMAT, addresses the
   yield-plateau typical of hot-rolled rebar, reported convergence ≥ ABAQUS
@@ -86,7 +86,7 @@ Bakkar et al. 2020 TMT rebar Chaboche/OW (doi:10.1007/s11668-020-00911-z).
 **Resolution of the key contradiction (2 vs 3).** The current app and
 `FATIGUE.cae` use **2** backstresses. The literature favours **3** because each
 backstress maps to a physical region of the loop (fast-saturating near yield;
-transient nonlinear mid-loop; near-linear at high strain) — and the project's
+transient nonlinear mid-loop; near-linear at high strain) - and the project's
 new scope (**all diameters × all L/D × 1–6% amplitude**) is precisely the
 wide-strain-range regime where the 3rd backstress earns its place. The 2-vs-3
 advantage is *not* mainly about the cycle-2-to-6 hysteresis of a single
@@ -109,13 +109,13 @@ expose 4 as an optional refinement.**
 | PINN / NN surrogate | ~100× throughput over FE-in-loop DE (Morand 2024) | bespoke PyTorch/TF | none | HIGH (exists) / MED (applicability) |
 
 **Findings.** DE "reliably finds the global optimum" where Nelder-Mead alone
-gets trapped (Dorward et al. 2024, doi:10.1016/j.matdes.2024.113409) — so the
+gets trapped (Dorward et al. 2024, doi:10.1016/j.matdes.2024.113409) - so the
 app's DE stage is well-chosen. The **grid stage is the weak link**: it does not
 scale to 3 backstresses. Sobol/LHS sampling gives the same "seed the global
 search" role at any dimensionality. Bayesian optimisation and CMA-ES are strong
 alternatives but add dependencies; the surrogate is fast (pure-Python
 integrator, ms-scale), so sample-hungry DE remains practical here. No
-rebar-specific Chaboche calibration used *any* of these algorithms — a genuine
+rebar-specific Chaboche calibration used *any* of these algorithms - a genuine
 gap this project would help close.
 
 ---
@@ -138,16 +138,16 @@ confidence for order-of-magnitude bounds**, LOW for material specificity.
 | Q∞ (MPa) | 20.8 (S355) | 228 (A500 HSS) | Krolo 2016; Hartloper 2021 |
 | b | 3.2 (S355) | 40 (Q235) | Krolo 2016; Wang 2021 |
 | E (GPa) | 185 | 207 | consistent with fixed E=200 GPa |
-| σ_y0 (MPa) | — | — | B500C ≈ 500–575 (EN 10080 / EN 1992-1-1) |
+| σ_y0 (MPa) | - | - | B500C ≈ 500–575 (EN 10080 / EN 1992-1-1) |
 
 **Two full-text papers likely contain true rebar values** (flagged, not
 fabricated): Bakkar et al. 2020 (TMT/Fe500, Chaboche UMAT) and Zhu et al. 2024
-(HRB400/HTRB600) — obtain in full text for exact numbers.
+(HRB400/HTRB600) - obtain in full text for exact numbers.
 
 **Note vs the inspected model.** `FATIGUE.cae` currently holds
 C1=2122, γ1=1.097, C2=62358, γ2=138, Q∞=−502, b=18. **γ1≈1.1 and C2≈62 GPa sit
 outside the envelope above**, and the implied kinematic saturation
-(C1/γ1 + C2/γ2 ≈ 2386 MPa) is physically very large — evidence these are
+(C1/γ1 + C2/γ2 ≈ 2386 MPa) is physically very large - evidence these are
 placeholder/loosely-fit values, reinforcing the need for a literature-anchored
 bounds/realism gate.
 
@@ -156,18 +156,18 @@ bounds/realism gate.
 ## 6. Dataset assessment (Q1E)
 
 Kashani, Cai, Davis & Vardanega (2019), *ASCE J. Mater. Civ. Eng.* 31(4),
-doi:10.1061/(ASCE)MT.1943-5533.0002637 — 120 LCF tests, 4 diameters × 5 L/D,
+doi:10.1061/(ASCE)MT.1943-5533.0002637 - 120 LCF tests, 4 diameters × 5 L/D,
 open Bristol dataset (doi:10.5523/bris.1kz5015zjoel92ueb97kwxd4ps). Adequate and
 already in hand.
 
 Flagged (not recommended switches): **Moodley, De Risi & Afshan (2026)**,
-J. Building Eng., doi:10.1016/j.jobe.2026.115378 — tests **B500C directly**, same
+J. Building Eng., doi:10.1016/j.jobe.2026.115378 - tests **B500C directly**, same
 diameter/L/D matrix, higher IF; **Egger, Rojas & Massone (2021)**,
-doi:10.1186/s40069-021-00474-9 — 1–5% amplitude, RGB-photogrammetry strain
+doi:10.1186/s40069-021-00474-9 - 1–5% amplitude, RGB-photogrammetry strain
 (cleaner time-series), open access.
 
 **Open gap:** the "ordered time-series vs sorted" property could not be
-confirmed for *any* dataset from metadata alone — including Kashani's. The app's
+confirmed for *any* dataset from metadata alone - including Kashani's. The app's
 `data_loader` already reconstructs strain from ordered `Position mm` and excludes
 cycle 1 as machine ramp, which is the correct handling; this should be preserved.
 
@@ -183,11 +183,11 @@ what is confirmed vs weak; resolve contradictions):
    Plasticity, J. Struct. Eng., Materials, Int. J. Fatigue). The rebar-specific
    evidence is weakest: 3 of 4 attempted full-text fetches were paywalled, and
    the closest rebar-Chaboche source (Bakkar 2020) is abstract-level only.
-   *This does not invalidate the recommendation* — it means the 3-backstress
+   *This does not invalidate the recommendation* - it means the 3-backstress
    default is inherited from general steel practice, which is appropriate given
    the absence of rebar-specific data, but it should be stated as such.
 2. **The main contradiction (2 vs 3) is resolvable.** Koo et al. (2 backstress)
-   is a hardened bearing steel under stress-controlled ratcheting — a different
+   is a hardened bearing steel under stress-controlled ratcheting - a different
    regime. It does not undermine the 3-backstress default for strain-controlled
    wide-amplitude LCF. No source argues *against* 3 for this regime.
 3. **Is 2-backstress Chaboche actually insufficient for B500C at these
@@ -209,7 +209,7 @@ what is confirmed vs weak; resolve contradictions):
 **Overall:** the evidence supports an *incremental, native-ABAQUS* upgrade
 (2→3 backstresses + a scalable search + literature bounds), not a model switch.
 A model switch (UVC/Ohno-Wang) is defensible only if yield-plateau fidelity or
-loop-shape accuracy proves inadequate after the 3-backstress fit — and it
+loop-shape accuracy proves inadequate after the 3-backstress fit - and it
 carries a UMAT development + verification cost.
 
 ---

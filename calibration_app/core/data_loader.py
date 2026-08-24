@@ -22,7 +22,7 @@ Dataset conventions (Kashani/Bristol; readme in input_data/)
   so the surrogate/FE state is conditioned before cycle 2.
 
 Yield stress is a **per-run input** (companion monotonic CSV or manual entry),
-never hardcoded — the material grade is unknown for scrap rebar. This module
+never hardcoded - the material grade is unknown for scrap rebar. This module
 only ever reads the data files; it never writes or modifies them.
 """
 
@@ -88,7 +88,7 @@ def load_monotonic_yield(
     (``offset_strain``) offset method if an elastic slope can be estimated;
     otherwise returns ``None`` so the caller falls back to manual entry.
 
-    This is a best-effort helper — for unknown scrap-rebar grades the user can
+    This is a best-effort helper - for unknown scrap-rebar grades the user can
     always type the yield stress in directly.
     """
     try:

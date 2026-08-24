@@ -1,4 +1,4 @@
-# Ohno-Wang (1993) Cyclic-Plasticity Model — Reference for Python Surrogate + ABAQUS UMAT
+# Ohno-Wang (1993) Cyclic-Plasticity Model - Reference for Python Surrogate + ABAQUS UMAT
 
 Prepared: 2026-07-02
 
@@ -16,7 +16,7 @@ DOI: [10.1016/0749-6419(93)90043-P](https://doi.org/10.1016/0749-6419(93)90043-P
 > (`S0749641993900042O` / `074964199390043P`) and could not be retrieved as
 > machine-readable text in this session (WebFetch returned HTTP 403 on ScienceDirect,
 > Academia.edu, and ResearchGate mirrors; the only full PDF that downloaded successfully
-> — via an academia.edu link — turned out to be a different, unrelated paper).
+> - via an academia.edu link - turned out to be a different, unrelated paper).
 > Consequently the equations below are given with the **numbering convention used
 > throughout the secondary/derivative literature** (Chen, Jiao & Kim 2005; Kobayashi &
 > Ohno 2002; Bandyopadhyay et al. 2021; Chaboche's own review papers), which is
@@ -49,7 +49,7 @@ Chaboche's single dynamic-recovery term (linear in α_i) with a **critical-state
 dynamic-recovery term that only activates once the norm of α_i approaches a
 component-specific saturation ("critical") value r_i.
 
-### 1.2 Multiaxial evolution rule for each backstress component (Model II — the one universally implemented in FE codes)
+### 1.2 Multiaxial evolution rule for each backstress component (Model II - the one universally implemented in FE codes)
 
 Ohno & Wang presented two versions:
 
@@ -57,7 +57,7 @@ Ohno & Wang presented two versions:
   switches on discontinuously at the critical surface ‖α_i‖ = r_i. This reproduces
   the "multilinear" (piecewise-linear) hardening rule exactly, but it predicts
   perfect uniaxial ratchetting shakedown (closed loops) and has a discontinuous
-  tangent — it is rarely used in FE practice.
+  tangent - it is rarely used in FE practice.
 - **Model II (OW-II):** replaces the Heaviside function with a **power-law
   (Macaulay-bracket) nonlinearity of exponent m_i**, giving a smooth, differentiable
   transition into the critical-recovery regime. This is *the* "Ohno-Wang model" as
@@ -87,7 +87,7 @@ Equations (2) and (2') are algebraically identical statements of the same rule; 
 appear in the literature depending on whether the author normalizes by dp or works
 directly with the tensor dε_p.
 
-### 1.3 Exact uniaxial (1-D) form — the form to hard-code and unit-test against
+### 1.3 Exact uniaxial (1-D) form - the form to hard-code and unit-test against
 
 For uniaxial loading, α_i, dε_p, and n collapse to scalars (α_i, dε_p, sign(dε_p)),
 and the rule reduces to the textbook uniaxial Ohno-Wang equation:
@@ -115,7 +115,7 @@ by reading its AceGen-derived residual, see §2.3):
 - At α_i = 0: recovery term is 0, so dα_i = C_i·dε_p (pure linear/Prager hardening
   at the start of the first loading branch).
 - As ‖α_i‖ → r_i with same-sign loading: the bracket saturates the recovery term,
-  capping the hardening — the classic "sum of piecewise-linear segments" limit.
+  capping the hardening - the classic "sum of piecewise-linear segments" limit.
 - m_i → ∞ collapses Model II onto Model I (the multilinear/piecewise-linear
   rule with hard corners at ‖α_i‖ = r_i); this is proven asymptotically in the
   1993 paper and repeated in every derivative work, e.g. Chen–Jiao–Kim (2005) and
@@ -127,7 +127,7 @@ by reading its AceGen-derived residual, see §2.3):
   special case of the Ohno-Wang recovery term with r_i = C_i/γ_i. This is the
   standard justification cited across the literature (e.g. Bari & Hassan 2002;
   Kang 2008 review) for why Ohno-Wang "contains" Armstrong-Frederick/Chaboche as
-  a nested/limiting model — useful for surrogate-model bounds (start optimizer
+  a nested/limiting model - useful for surrogate-model bounds (start optimizer
   searches for m_i in [1, 20] and let the fit tell you whether the material wants
   AF-like or multilinear-like behavior).
 
@@ -158,7 +158,7 @@ with the standard rate-independent Kuhn-Tucker (KKT) loading/unloading condition
 ```
 
 Consistency (Φ̇ = 0 during plastic flow) closes the system and yields the plastic
-multiplier dλ in terms of the hardening moduli — standard return-mapping mechanics,
+multiplier dλ in terms of the hardening moduli - standard return-mapping mechanics,
 unaffected by which kinematic-hardening sub-rule (AF, Chaboche, Ohno-Wang) is used;
 only Eq. (2)/(2') changes between models.
 
@@ -171,12 +171,12 @@ only Eq. (2)/(2') changes between models.
 | r_i (≡ ζ_i in some papers) | critical ("saturation") value of ‖α_i‖ for component i | MPa | sometimes written β_∞,i (e.g. KnutAM docs) |
 | m_i | dynamic-recovery sharpness exponent for component i | dimensionless | m_i ≥ 1 typically; m_i → ∞ gives multilinear OW-I |
 | M | number of backstress components | integer | typically 2–5; 4–5 needed to capture both LCF hysteresis shape and ratchet rate |
-| Q, b (optional) | isotropic hardening saturation stress / rate | MPa, — | independent of kinematic model, needed for cyclic hardening/softening |
+| Q, b (optional) | isotropic hardening saturation stress / rate | MPa, - | independent of kinematic model, needed for cyclic hardening/softening |
 
 Total kinematic-hardening modulus at α_i = 0 equals Σ C_i, which must reproduce the
 measured initial (or cyclic) hardening slope; Σ r_i (loosely) bounds the ultimate
 kinematic contribution to flow stress, so **C_i and r_i are not independent of the
-monotonic/cyclic stress-strain curve** — they are usually fit simultaneously with a
+monotonic/cyclic stress-strain curve** - they are usually fit simultaneously with a
 Voce-type isotropic term via nonlinear least squares/genetic algorithms against a
 stabilized hysteresis loop plus at least one ratcheting test (uniaxial mean-stress
 cycling), because a single symmetric loop alone under-constrains m_i.
@@ -188,7 +188,7 @@ cycling), because a single symmetric loop alone under-constrains m_i.
   ratcheting-calibration paper since.
 - Set bounds m_i ∈ [1, 30] (m_i = 1 ~ Armstrong-Frederick/Chaboche limit; m_i > 15
   is numerically close to the multilinear/Model-I limit and tends to be
-  ill-conditioned in gradient-based fits — genetic/evolutionary optimizers are
+  ill-conditioned in gradient-based fits - genetic/evolutionary optimizers are
   commonly used for this reason, e.g. the multi-objective GA calibration paper in
   *Int. J. Comp. Mat. Sci. Surf. Eng.*, 2014).
 - Constrain Σ C_i·r_i to be consistent with the (σ_ult − σ_y0) monotonic hardening
@@ -200,48 +200,48 @@ cycling), because a single symmetric loop alone under-constrains m_i.
 
 ### 2.1 Repository, file, and license
 
-- **Repository:** `KnutAM/MaterialModels` — https://github.com/KnutAM/MaterialModels
+- **Repository:** `KnutAM/MaterialModels` - https://github.com/KnutAM/MaterialModels
   (author: Knut Andreas Meyer, Chalmers University of Technology; archived on Zenodo,
   DOI badge via `https://zenodo.org/badge/latestdoi/191778601`)
 - **Cloned locally** (shallow clone, `git clone --depth 1`) to verify contents directly
-  — confirmed present and readable.
+  - confirmed present and readable.
 - **License: MIT** (file `LICENSE` at repo root, copyright 2019 Knut Andreas Meyer).
   This is a **permissive license**, compatible with reuse/adaptation in this project,
   **with one caveat**: the LICENSE file itself states that portions of the code
   generated by the AceGen symbolic-code-generation tool are subject to AceGen's own
   redistribution restriction ("you may not include the codes generated by AceGen into
-  other code if [the] other code is later use[d] for resale, rent or lease" —
+  other code if [the] other code is later use[d] for resale, rent or lease" -
   http://symech.fgg.uni-lj.si/Download.htm). The Ohno-Wang model's residual/Jacobian
   files (`ohnowang_acegen_mod.f90`, and the `AGfiles` under `GenFiniteStrain`) are
   AceGen-generated; the hand-written driver/dispatch files
-  (`GeneralSmallStrain.f90`, `gss_module.f90`, `ohnowang.f90` — the parameter-count
+  (`GeneralSmallStrain.f90`, `gss_module.f90`, `ohnowang.f90` - the parameter-count
   checker) are plain MIT. For a non-commercial academic/research surrogate + UMAT
   calibration tool this is not a practical obstacle, but it should not be
   redistributed as part of a for-resale/lease commercial product without checking
   the AceGen terms.
 - **Specific files implementing Ohno-Wang:**
-  - `models/GenSmallStrain/src/GeneralSmallStrain.f90` — the actual `SUBROUTINE UMAT(...)`
+  - `models/GenSmallStrain/src/GeneralSmallStrain.f90` - the actual `SUBROUTINE UMAT(...)`
     entry point (standard ABAQUS UMAT argument list: `stress, statev, ddsdde, sse, spd,
     scd, rpl, ddsddt, drplde, drpldt, stran, dstran, time, dtime, temp, dtemp, predef,
     dpred, cmname, ndi, nshr, ntens, nstatv, props, nprops, coords, drot, pnewdt,
     celent, dfgrd0, dfgrd1, noel, npt, layer, kspt, kstep, kinc`), which uses
     `use model_module` to select the active hardening rule.
-  - `models/GenSmallStrain/src/ohnowang.f90` — the Ohno-Wang-specific `model_module`:
+  - `models/GenSmallStrain/src/ohnowang.f90` - the Ohno-Wang-specific `model_module`:
     defines `checkinput()`, which validates `nprops = 6 + 3*nback` and
     `nstatv = 2 + 6*nback`, and maps `E, ν → G, K`.
-  - `models/GenSmallStrain/src/ohnowang_acegen_mod.f90` — AceGen-generated residual
+  - `models/GenSmallStrain/src/ohnowang_acegen_mod.f90` - AceGen-generated residual
     (`RF1`-`RF4`) and Jacobian (`dRdX1`-`dRdX4`) subroutines implementing the
     backward-Euler-integrated Ohno-Wang evolution law for 1–4 backstresses (license
     caveat above applies to this file specifically).
   - `models/GenSmallStrain/doc/ohnowang.md` and
-    `models/GenSmallStrain/doc/latex/description.tex` — human-readable
+    `models/GenSmallStrain/doc/latex/description.tex` - human-readable
     documentation stating the exact model equations (reproduced/verified in §2.2).
   - Rate-dependent (viscoplastic) variants also exist in the same folder:
     `ohnowang_rdep.f90`, `ohnowang_norton_acegen_mod.f90`,
     `ohnowang_cowsym_acegen_mod.f90`, `ohnowang_delobelle_acegen_mod.f90` (different
     overstress functions η(Φ) layered on top of the same Ohno-Wang kinematic rule).
 
-### 2.2 Equation match against Ohno & Wang (1993) — verified from `description.tex`
+### 2.2 Equation match against Ohno & Wang (1993) - verified from `description.tex`
 
 The repo's own LaTeX documentation (`models/GenSmallStrain/doc/latex/description.tex`,
 read in full) defines the kinematic-hardening-strain-conjugated evolution law as:
@@ -259,10 +259,10 @@ model is obtained by setting δ=1"); δ = 0 gives the Burlet–Cailletaud (1986)
 multiaxial modification instead, and intermediate δ gives the Delobelle blend. This
 matches Eq. (2)/(2′) above term-for-term once δ is set to 1 and the Macaulay-bracket
 power-law structure (⟨·⟩ and exponent m_i acting on the normalized backstress
-magnitude) is compared side-by-side — confirmed by direct inspection, not taken on
+magnitude) is compared side-by-side - confirmed by direct inspection, not taken on
 faith from the repo's own claim.
 
-### 2.3 PROPS (material-constant) ordering — confirmed from `ohnowang.md`
+### 2.3 PROPS (material-constant) ordering - confirmed from `ohnowang.md`
 
 For a model with `nback` backstress components, `nprops = 6 + 3*nback`
 (checked programmatically in `checkinput()` in `ohnowang.f90`, which aborts the
@@ -285,10 +285,10 @@ analysis with a diagnostic message if `nprops` or `nstatv` don't match this form
 | ... | ... | pattern repeats in groups of 3 for each further backstress, up to `nback = 4` |
 
 Note the repo parameterizes r_i as its **reciprocal** (`invYk_i = 1/r_i`) rather than
-r_i directly — a common numerical-conditioning choice; this must be inverted when
+r_i directly - a common numerical-conditioning choice; this must be inverted when
 mapping to/from the C_i, r_i, m_i notation used in §1.
 
-### 2.4 State-variable (SDV/STATEV) layout — confirmed from `ohnowang.md`
+### 2.4 State-variable (SDV/STATEV) layout - confirmed from `ohnowang.md`
 
 `nstatv = 2 + 6*nback`:
 
@@ -301,20 +301,20 @@ mapping to/from the C_i, r_i, m_i notation used in §1.
 | ... | pattern repeats in blocks of 6 for each further backstress |
 
 `nback = (nstatv − 2)/6` is back-computed inside `checkinput()`, and only
-`nback ∈ {1, 2, 3, 4}` is accepted (`nback_allowed` array in `ohnowang.f90`) — so if
+`nback ∈ {1, 2, 3, 4}` is accepted (`nback_allowed` array in `ohnowang.f90`) - so if
 a surrogate/calibration workflow wants M > 4 backstresses, this particular UMAT
 would need to be extended (the AceGen generation script would need to be re-run for
 `RF5`/`dRdX5`, etc.), or a different UMAT selected.
 
 ### 2.5 Other candidates checked (for completeness / due diligence)
 
-- **KnutAM/umat** — an older, now-superseded standalone repo referenced in the
+- **KnutAM/umat** - an older, now-superseded standalone repo referenced in the
   `ref.bib` of `MaterialModels` (`url = https://github.com/KnutAM/umat`); superseded
   by `KnutAM/MaterialModels`, not used as the primary citation here.
-- **dithoap/RESSForLab** — Voce-Chaboche UMATs only (no Ohno-Wang critical-state
+- **dithoap/RESSForLab** - Voce-Chaboche UMATs only (no Ohno-Wang critical-state
   recovery term); not applicable to this task.
 - **theysy/mml_subroutine_public**, **jpsferreira/UMAT-ABAQUS_library**,
-  **sreepatiballa/UMAT_Lectures** — general UMAT teaching/collection repos found in
+  **sreepatiballa/UMAT_Lectures** - general UMAT teaching/collection repos found in
   search; spot-checked descriptions and none advertise an Ohno-Wang critical-state
   dynamic-recovery implementation specifically (mostly J2/Chaboche/Armstrong-Frederick
   teaching examples). Not cloned/verified in depth because KnutAM/MaterialModels
@@ -323,7 +323,7 @@ would need to be extended (the AceGen generation script would need to be re-run 
 - No Zenodo/ResearchGate standalone "Ohno-Wang UMAT" code deposit (as opposed to a
   paper) was found independent of the KnutAM repository during this search.
 
-**Conclusion: KnutAM/MaterialModels is the recommended reference implementation** —
+**Conclusion: KnutAM/MaterialModels is the recommended reference implementation** -
 permissively licensed (MIT, with the narrow AceGen-file caveat noted above), openly
 cloneable, textually verified against its own equation documentation, and the only
 candidate found with an explicit, auditable Ohno-Wang δ=1 special case plus a
@@ -340,7 +340,7 @@ and ResearchGate blocked programmatic fetch with HTTP 403). The ranges/orders of
 magnitude below are triangulated from what **was** retrievable (abstracts, citing
 papers, and the general consensus reported across the ratcheting-calibration
 literature); treat these as **starting search bounds for an optimizer, not
-ground truth for any single heat/grade of steel** — always recalibrate against your
+ground truth for any single heat/grade of steel** - always recalibrate against your
 own test data when available.
 
 | Material | C_i range (MPa) | r_i / ζ_i range (MPa) | m_i range | M (# backstresses) | σ_y0 (MPa) | Source |
@@ -348,14 +348,14 @@ own test data when available.
 | AISI 316L / 316FR austenitic stainless steel | O(10³–10⁵) decreasing with i | O(10–200) | **m₁=1, m₂=2, m₃≈4-7, m₄→ large** (increasing with i; m→∞ for the last/"anchor" component to enforce a hard ratchet limit) | 4–5 | ≈120–200 | Kobayashi, M. & Ohno, N. (2002). "Implementation of cyclic plasticity models based on a general form of kinematic hardening." *Int. J. Numer. Methods Eng.*, 53(9), 2217–2238. DOI: 10.1002/nme.377 |
 | Medium carbon steel S45C (JIS, ≈0.45%C) | multi-term, decreasing C_i with increasing i (typical O-W calibration pattern) | increasing r_i with i, last component largest (10²–10³ MPa range) | increasing m_i with i; last (highest-r) component given the largest m_i to sharply cap ratchet strain | 3–5 | ≈250–380 | Chen, X., Jiao, R., Kim, K.S. (2005). "On the Ohno–Wang kinematic hardening rules for multiaxial ratcheting modeling of medium carbon steel." *Int. J. Plasticity*, 21(1), 161–184. DOI: 10.1016/j.ijplas.2004.05.017 |
 | Carbon/structural steel (general calibration methodology, mild steel σ_F≈250 N/mm²) | fit via 2–3 backstresses to a stabilized loop | fit alongside C_i | O(1–5) typically sufficient for structural-steel-grade LCF/seismic work (values much beyond ~10 rarely improve fit without ratchet data) | 2–4 (fatigue-only); 4–5 (if ratcheting must also be captured) | E≈2.0–2.1×10⁵ MPa, σ_y≈235–420 (mild/structural grades) | Halama, R., Sedlák, J., Šofer, M. "Choice and Calibration of Cyclic Plasticity Model with Regard to Subsequent Fatigue Analysis." *Engineering Mechanics*, 19(2), 87–97 (2012); and general practice summarized in Bari, S. & Hassan, T. (2002). "An advancement in cyclic plasticity modeling for multiaxial ratcheting simulation." *Int. J. Plasticity*, 18(7), 873–894. DOI: 10.1016/S0749-6419(01)00012-2 |
-| Reinforcing steel / rebar (TMT, mild-steel-grade, seismic/LCF) | not tabulated in retrievable sources this session | not tabulated | not tabulated | typically 3–5, per general O-W LCF practice | ≈400–500 (TMT Fe500-class) | Application confirmed (Ohno-Wang used via UMAT in ABAQUS for TMT rebar low-cycle-fatigue and seismic performance studies), but the specific numeric C_i/r_i/m_i table was not accessible in this session. See search hits for "Low Cycle Fatigue Performance and Failure Analysis of Reinforcing Bar" and "Seismic Performance Assessment of a TMT Rebar" (ResearchGate/Academia.edu records located, full text not retrieved — **flag for manual follow-up** if rebar-specific numbers are required). |
+| Reinforcing steel / rebar (TMT, mild-steel-grade, seismic/LCF) | not tabulated in retrievable sources this session | not tabulated | not tabulated | typically 3–5, per general O-W LCF practice | ≈400–500 (TMT Fe500-class) | Application confirmed (Ohno-Wang used via UMAT in ABAQUS for TMT rebar low-cycle-fatigue and seismic performance studies), but the specific numeric C_i/r_i/m_i table was not accessible in this session. See search hits for "Low Cycle Fatigue Performance and Failure Analysis of Reinforcing Bar" and "Seismic Performance Assessment of a TMT Rebar" (ResearchGate/Academia.edu records located, full text not retrieved - **flag for manual follow-up** if rebar-specific numbers are required). |
 
-### 3.1 Kobayashi & Ohno (2002) 316L m-values — what could be confirmed
+### 3.1 Kobayashi & Ohno (2002) 316L m-values - what could be confirmed
 
 The task specifically asks about the AISI 316L m-value sequence
-(m₁=1, m₂=2, m₃=..., from Kobayashi & Ohno 2002). This pattern — **assigning
+(m₁=1, m₂=2, m₃=..., from Kobayashi & Ohno 2002). This pattern - **assigning
 successively larger integer/near-integer exponents to successively higher-index
-(larger-r) backstress components** — is a well-documented, widely-cited convention
+(larger-r) backstress components** - is a well-documented, widely-cited convention
 in the Ohno-Wang literature (it lets the low-r, low-m components govern the smooth
 hysteresis-loop shape while the high-r, high-m components act as a nearly-rigid
 "backstop" that caps ratcheting), and Kobayashi & Ohno (2002), *Int. J. Numer.
@@ -387,7 +387,7 @@ fit (to be tightened once real test data is available) are:
 - Isotropic hardening (if included): Q ∈ [-150, +150] MPa (softening negative,
   hardening positive), b ∈ [1, 50]
 
-These are intentionally wide **search bounds**, not point estimates — the actual
+These are intentionally wide **search bounds**, not point estimates - the actual
 optimizer (genetic algorithm / least-squares) should be left to explore within them
 against the project's own stabilized-hysteresis-loop and/or ratchet-test data.
 
@@ -422,10 +422,10 @@ against the project's own stabilized-hysteresis-loop and/or ratchet-test data.
    DOI: 10.1016/j.ijplas.2020.102887 (reproduces the Ohno-Wang evolution law as
    their Eq. 7, citing Ohno & Wang 1993a/1993b; verified by direct text extraction
    in this session).
-8. Meyer, K.A. (2019). `KnutAM/MaterialModels` — User material models for Abaqus
+8. Meyer, K.A. (2019). `KnutAM/MaterialModels` - User material models for Abaqus
    (UMAT). GitHub repository, MIT License, Zenodo-archived (DOI badge:
    `zenodo.org/badge/latestdoi/191778601`). https://github.com/KnutAM/MaterialModels
-   — cloned and verified directly in this session (LICENSE file, `ohnowang.f90`,
+   - cloned and verified directly in this session (LICENSE file, `ohnowang.f90`,
    `ohnowang_acegen_mod.f90`, `ohnowang.md`, `description.tex`).
 9. Armstrong, P.J. & Frederick, C.O. (1966). A mathematical representation of the
    multiaxial Bauschinger effect. CEGB Report RD/B/N731, Berkeley Nuclear
@@ -439,14 +439,14 @@ against the project's own stabilized-hysteresis-loop and/or ratchet-test data.
 ## 5. Open items / follow-up if higher precision is needed
 
 - The primary 1993 Part I/II papers were not obtainable as extractable text in this
-  session (institutional/paywall access needed) — the equation numbering above
+  session (institutional/paywall access needed) - the equation numbering above
   follows the near-universal secondary-literature convention, not confirmed
   character-for-character against the original typeset pages.
 - The exact Kobayashi & Ohno (2002) 316L parameter table (C_i, r_i, and the
   m_i = 1, 2, ... sequence) needs Wiley institutional access to confirm numerically;
   flagged in §3.1.
 - No numeric Ohno-Wang table specific to reinforcing bar/rebar steel was retrievable
-  this session; flagged in the rebar row of the §3 table — recommend a targeted
+  this session; flagged in the rebar row of the §3 table - recommend a targeted
   follow-up search once institutional journal access is available (candidates:
   the "Low Cycle Fatigue Performance and Failure Analysis of Reinforcing Bar" and
   "Seismic Performance Assessment of a TMT Rebar" papers found on

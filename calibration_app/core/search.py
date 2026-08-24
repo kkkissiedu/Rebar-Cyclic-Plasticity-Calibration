@@ -5,16 +5,16 @@ core/search.py
 Backend-agnostic optimisers for parameter identification.
 
 The optimisers never know whether they are driving the pure-Python surrogate or
-a real ABAQUS FE evaluation — they are handed a single ``evaluate(params) ->
+a real ABAQUS FE evaluation - they are handed a single ``evaluate(params) ->
 float`` callable plus the bounds. This is what makes the four study conditions
 (Surrogate/FE x DE/Bayesian) share one code path with an identical objective.
 
 Provided
 --------
-* :func:`sobol_seed`  — space-filling Stage-1 sampling (replaces the old grid,
+* :func:`sobol_seed`  - space-filling Stage-1 sampling (replaces the old grid,
   which does not scale past ~6 parameters). Returns the best-K seeds.
-* :func:`run_differential_evolution` — SciPy DE (Stage-2 global refinement).
-* :func:`run_bayesian` — Optuna TPE Bayesian optimisation (default for the
+* :func:`run_differential_evolution` - SciPy DE (Stage-2 global refinement).
+* :func:`run_bayesian` - Optuna TPE Bayesian optimisation (default for the
   expensive FE backend; DE remains selectable).
 
 All three accept a ``progress`` callback (called once per evaluation with an
@@ -138,7 +138,7 @@ def run_differential_evolution(
 ) -> SearchResult:
     """Stage 2: SciPy differential evolution (reliable global refinement).
 
-    ``workers=1`` deliberately — the objective closes over model/data and is not
+    ``workers=1`` deliberately - the objective closes over model/data and is not
     guaranteed picklable on Windows spawn; parallelism is handled at the
     ABAQUS-job level in the FE backend instead.
     """

@@ -2,7 +2,7 @@
 core/uvc_model.py
 =================
 
-Updated Voce-Chaboche (UVC) model — Hartloper, de Castro e Sousa & Lignos (2021),
+Updated Voce-Chaboche (UVC) model - Hartloper, de Castro e Sousa & Lignos (2021),
 "Constitutive Modeling of Structural Steels: Nonlinear Isotropic/Kinematic
 Hardening Material Model and Its Calibration", J. Struct. Eng.,
 doi:10.1061/(ASCE)ST.1943-541X.0002964.
@@ -20,13 +20,13 @@ Constitutive equations (uniaxial)
 Yield function (UMAT L79-80, squared form):
     phi = (sigma - alpha)^2 - sigma_y^2 ,  plastic if phi > 0.
 
-Isotropic hardening — **updated Voce** (UMAT L67-68, L120-122):
+Isotropic hardening - **updated Voce** (UMAT L67-68, L120-122):
     sigma_y(p) = sigma_y0 + Q*(1 - exp(-b*p)) - D*(1 - exp(-a*p))          (ISO)
     The first Voce term (Q, b) is standard saturation; the SECOND term
     (D, a) is the UVC addition that reproduces the **yield plateau /
     discontinuous yielding**. See "Yield plateau" note below.
 
-Kinematic hardening — Chaboche / Armstrong-Frederick, integrated in closed form
+Kinematic hardening - Chaboche / Armstrong-Frederick, integrated in closed form
 over the plastic increment (UMAT L127-129):
     alpha_k = s*C_k/gamma_k
               - (s*C_k/gamma_k - alpha_k_init) * exp(-gamma_k * dp) ,        (KIN)
@@ -40,7 +40,7 @@ Yield plateau (D, a)
 D is the magnitude and a the rate of the second (subtractive) Voce term. Near
 p = 0 it lowers sigma_y below sigma_y0 + Q*(...) and then decays, producing the
 flat/again-rising "Luders"-type plateau of hot-rolled steel. Setting **D = 0
-suppresses the plateau**, reducing UVC to the standard Voce-Chaboche model —
+suppresses the plateau**, reducing UVC to the standard Voce-Chaboche model -
 useful because locally-manufactured scrap rebar may or may not show a plateau
 depending on processing history. The lower bound on D is therefore 0.
 
@@ -187,7 +187,7 @@ class UVCModel(CyclicPlasticityModel):
         self.n_backstresses = int(n_backstresses)
         self.display_name = f"UVC ({self.n_backstresses}-backstress)"
         #: FE backend uses this UMAT (relative to the package root).
-        #: C++ port of UVCuniaxial.for (2026-07-14) — this machine has no
+        #: C++ port of UVCuniaxial.for (2026-07-14) - this machine has no
         #: Intel Fortran; ABAQUS compiles the .cpp with MSVC. Cross-validated
         #: 0.0000 MPa against this surrogate on fine+coarse paths, 1-3%.
         self.umat_file = "calibration_app/umats/UVCuniaxial.cpp"

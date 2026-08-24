@@ -127,7 +127,7 @@ def build_transfer_config(state: dict, cae_path: str,
         # UMAT models: the CAE copy gets *USER MATERIAL + *DEPVAR and the
         # multiaxial C++ UMAT (umats/*multiaxial*.cpp) prebuilt into a
         # standardU.dll loaded via usub_lib_dir (see build_umat_library).
-        # PROPS layouts match the UMAT headers (E, nu leading — the 3D
+        # PROPS layouts match the UMAT headers (E, nu leading - the 3D
         # subroutines need Poisson's ratio, unlike the uniaxial FE cards).
         material_mode = "user"
         plastic_table, cyclic_table = None, None
@@ -792,7 +792,7 @@ def build_umat_library(tcfg: dict, abaqus_cmd: str = "abaqus",
     ``abaqus_v6.env`` there containing the Intel-free ``link_sl`` override
     plus ``usub_lib_dir`` pointing at that folder. The user then submits the
     job from CAE normally: the solver loads the precompiled standardU.dll
-    from ``usub_lib_dir`` — no compiler in CAE's environment and no
+    from ``usub_lib_dir`` - no compiler in CAE's environment and no
     user-subroutine job setting needed. No-op for native (Chaboche) mode.
     """
     if tcfg.get("material_mode") != "user":

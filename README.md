@@ -2,7 +2,7 @@
 
 A calibration and FE-verification pipeline that fits cyclic-plasticity
 constitutive models to strain-controlled low-cycle-fatigue (LCF) hysteresis
-data, then verifies every fit against a real ABAQUS solve — surrogate and
+data, then verifies every fit against a real ABAQUS solve - surrogate and
 finite-element results held to the *same* objective function throughout.
 
 **Context.** The real target is locally-manufactured (scrap-metal) rebar of
@@ -17,10 +17,10 @@ et al. (2019) B500C dataset before it is pointed at the real material.
   <img src="figures/fe-verification-2pct-16mm.png" width="49%" alt="FE vs experiment, 2% strain, 16mm bar">
 </p>
 
-<p align="center"><em>Left: the calibration app mid-run — live stress-strain plot,
+<p align="center"><em>Left: the calibration app mid-run - live stress-strain plot,
 per-model verification table, and session controls. Right: the calibrated
 Chaboche model transferred into a full ABAQUS coupon simulation, 2% strain
-amplitude — surrogate 69.2 MPa vs FE 61.1 MPa objective, essentially the same
+amplitude - surrogate 69.2 MPa vs FE 61.1 MPa objective, essentially the same
 fit.</em></p>
 
 ## Why this exists
@@ -30,11 +30,11 @@ against a hand-picked parameter set. This project treats calibration as an
 optimisation + verification *pipeline*:
 
 1. Any of three published cyclic-plasticity models can be dropped in behind an
-   identical interface — no optimiser or UI code changes.
+   identical interface - no optimiser or UI code changes.
 2. Every model is calibrated against a fast Python surrogate, then the winning
    parameter set is **re-run inside real ABAQUS** (single-element for search-time
    checks, full 3-D coupon for final verification) and scored with the *same*
-   objective — so a good surrogate fit that doesn't survive contact with a real
+   objective - so a good surrogate fit that doesn't survive contact with a real
    finite-element solve is caught, not assumed away.
 3. A physics gate rejects/repairs parameter combinations that are numerically
    fine but not physically meaningful (see below) before they ever reach ABAQUS.
@@ -44,12 +44,12 @@ optimisation + verification *pipeline*:
 | Model | Reference | ABAQUS-native? | Backstresses |
 |---|---|---|---|
 | Chaboche combined isotropic/kinematic | Chaboche (1986), *Int. J. Plasticity* 2:149-188 | Yes (`*PLASTIC, HARDENING=COMBINED`) | 2 / 3 / 4 |
-| Updated Voce-Chaboche (UVC) | Hartloper, de Castro e Sousa & Lignos (2021), *J. Struct. Eng.*, [doi:10.1061/(ASCE)ST.1943-541X.0002964](https://doi.org/10.1061/(ASCE)ST.1943-541X.0002964) | No — user material | 2 / 3 / 4 |
-| Ohno-Wang model I + Voce isotropic extension | Ohno & Wang (1993), *Int. J. Plasticity* 9(3):375-390 | No — user material | 2 / 3 / 4 |
+| Updated Voce-Chaboche (UVC) | Hartloper, de Castro e Sousa & Lignos (2021), *J. Struct. Eng.*, [doi:10.1061/(ASCE)ST.1943-541X.0002964](https://doi.org/10.1061/(ASCE)ST.1943-541X.0002964) | No - user material | 2 / 3 / 4 |
+| Ohno-Wang model I + Voce isotropic extension | Ohno & Wang (1993), *Int. J. Plasticity* 9(3):375-390 | No - user material | 2 / 3 / 4 |
 
 Chaboche is ABAQUS-native; UVC and Ohno-Wang are not, and this machine has no
 Intel Fortran compiler (ABAQUS's official user-subroutine route). Both are
-implemented as **C++ user materials compiled with MSVC** instead — the finite
+implemented as **C++ user materials compiled with MSVC** instead - the finite
 element backend, the "known-hard" part of this project, is described in
 [`calibration_app/umats/`](calibration_app/umats/). Every C++ port was
 cross-validated against its Python surrogate to **0.0000 MPa** difference on
@@ -60,12 +60,12 @@ identical strain paths before being trusted for FE verification.
 ```
 Stage 1  Sobol space-filling search of the parameter box (replaces grid search,
          which is combinatorially infeasible past ~6 free parameters)
-Stage 2  Refinement — Differential Evolution or Bayesian/TPE (Optuna)
+Stage 2  Refinement - Differential Evolution or Bayesian/TPE (Optuna)
 Stage 3  ABAQUS verification of the winning candidate (single element, then
          optionally the full 3-D coupon via "Transfer to CAE")
 ```
 
-Backend (Surrogate / FE) and optimiser (DE / Bayesian) are independent axes —
+Backend (Surrogate / FE) and optimiser (DE / Bayesian) are independent axes -
 all four combinations are directly comparable because they share one objective:
 a per-cycle weighted RMSE (`core/objective.py`), reversal regions weighted
 1.5x, with the first loaded cycle excluded from scoring but retained as a
@@ -74,17 +74,17 @@ starts.
 
 ## A physics gate, not just a numerical fit
 
-A parameter set can minimise RMSE while being unphysical — three backstresses
+A parameter set can minimise RMSE while being unphysical - three backstresses
 collapsing to the same relaxation rate (an over-parameterised single
 backstress in disguise), or a saturated-yield floor implying more cyclic
 softening than the material can plausibly sustain. `utils/physics_gate.py`
 enforces, for any model using a Chaboche-style backstress decomposition:
 
 * **γ-separation**: `γ_k / γ_{k+1} ≥ 3` (Chaboche 1986 Eq. 5's own
-  multi-timescale rationale; Bari & Hassan 2000) — added after a real fit on
+  multi-timescale rationale; Bari & Hassan 2000) - added after a real fit on
   this dataset collapsed all three γ's to within 0.01 of each other.
 * A saturated-yield floor tied to the *loaded* data's measured peak stress,
-  not a hard-coded material constant — this is what keeps the whole pipeline
+  not a hard-coded material constant - this is what keeps the whole pipeline
   grade-agnostic.
 
 Violations are repaired by projection where possible and otherwise rejected
@@ -95,19 +95,19 @@ before the candidate is ever sent to ABAQUS.
 Every full-coupon run records two independent channels, deliberately not just
 one:
 
-* **Nominal** — total reaction force on the crosshead node set divided by the
+* **Nominal** - total reaction force on the crosshead node set divided by the
   original cross-section, against mean crosshead displacement over the gauge
   length. This is the load-cell/crosshead analogue: immune to local strain
   localisation, and the one scored against the objective.
-* **Local** — axial stress/strain on the single element closest to
+* **Local** - axial stress/strain on the single element closest to
   mid-gauge (highlighted in the mesh figure above). Kept purely as a
   diagnostic: if it drifts from the nominal channel, that is evidence of
-  barrelling or incipient buckling at high strain amplitude — a structural
+  barrelling or incipient buckling at high strain amplitude - a structural
   effect no single-element surrogate can represent, and something a
   surrogate-only calibration would never surface.
 
 This dual-channel setup is what lets the pipeline tell "the constitutive
-model is wrong" apart from "the specimen is deforming non-uniformly" —
+model is wrong" apart from "the specimen is deforming non-uniformly" -
 two very different problems that a single RMSE number cannot distinguish.
 
 ## Repository layout
@@ -154,16 +154,16 @@ python -m calibration_app.main
 The GUI backend needs `tkinter` (standard on most Python distributions). The
 FE-in-the-loop backend and "Transfer to CAE" additionally require a licensed
 ABAQUS 2024 install and, for the UVC / Ohno-Wang user materials, an MSVC C++
-toolchain — see `calibration_app/umats/` for the compile chain.
+toolchain - see `calibration_app/umats/` for the compile chain.
 
 ## What isn't in this repository, and why
 
-* **`input_data/`** — the Kashani et al. (2019) Bristol dataset is openly
+* **`input_data/`** - the Kashani et al. (2019) Bristol dataset is openly
   available at its own DOI (below); it isn't re-hosted here.
-* **`calibration_sessions/`** — full run history (ABAQUS `.odb`/`.inp` files,
+* **`calibration_sessions/`** - full run history (ABAQUS `.odb`/`.inp` files,
   per-evaluation logs) is gigabytes per session and specific to a local
   machine; `figures/` and `docs/results-table.md` are the curated summary.
-* **`FATIGUE.cae` / `FATIGUE_rebuilt.cae`** — proprietary-format ABAQUS binaries
+* **`FATIGUE.cae` / `FATIGUE_rebuilt.cae`** - proprietary-format ABAQUS binaries
   with no value outside a licensed ABAQUS install; `cae_transfer.py` documents
   and regenerates everything they contain.
 
@@ -172,7 +172,7 @@ toolchain — see `calibration_app/umats/` for the compile chain.
 * Kashani, M.M., Cai, S., Davis, S.A. & Vardanega, P.J. (2019). "Influence of
   Bar Diameter on Low-Cycle Fatigue Degradation of Reinforcing Bars." *J. Mater.
   Civ. Eng.* 31(4). [doi:10.1061/(ASCE)MT.1943-5533.0002637](https://doi.org/10.1061/(ASCE)MT.1943-5533.0002637)
-  — dataset: [doi:10.5523/bris.1kz5015zjoel92ueb97kwxd4ps](https://doi.org/10.5523/bris.1kz5015zjoel92ueb97kwxd4ps)
+  - dataset: [doi:10.5523/bris.1kz5015zjoel92ueb97kwxd4ps](https://doi.org/10.5523/bris.1kz5015zjoel92ueb97kwxd4ps)
 * Chaboche, J.L. (1986). "Time-independent constitutive theories for cyclic
   plasticity." *Int. J. Plasticity* 2(2):149-188.
 * Ohno, N. & Wang, J.D. (1993). "Kinematic hardening rules with critical state
@@ -181,7 +181,7 @@ toolchain — see `calibration_app/umats/` for the compile chain.
   Modeling of Structural Steels: Nonlinear Isotropic/Kinematic Hardening
   Material Model and Its Calibration." *J. Struct. Eng.* 147(4).
   [doi:10.1061/(ASCE)ST.1943-541X.0002964](https://doi.org/10.1061/(ASCE)ST.1943-541X.0002964)
-  — UMAT reference: [github.com/ahartloper/UVC_MatMod](https://github.com/ahartloper/UVC_MatMod)
+  - UMAT reference: [github.com/ahartloper/UVC_MatMod](https://github.com/ahartloper/UVC_MatMod)
 * Bari, S. & Hassan, T. (2000). "Anatomy of coupled constitutive models for
   ratcheting simulation." *Int. J. Plasticity* 16(3-4):381-409.
 
@@ -189,6 +189,6 @@ Full literature survey with per-claim confidence ratings: `docs/literature-revie
 
 ## License
 
-MIT — see `LICENSE`. The UVC user-material files under `calibration_app/umats/`
+MIT - see `LICENSE`. The UVC user-material files under `calibration_app/umats/`
 carry their own MIT attribution to the original authors (see `LICENSE` and
 `calibration_app/umats/UVC_LICENSE_MIT.txt`).

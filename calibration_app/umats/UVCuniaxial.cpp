@@ -1,11 +1,11 @@
 /* ==========================================================================
- * UVCuniaxial.cpp — Updated Voce-Chaboche uniaxial UMAT (C++ / MSVC build)
+ * UVCuniaxial.cpp - Updated Voce-Chaboche uniaxial UMAT (C++ / MSVC build)
  * ==========================================================================
  *
  * C++ port of UVCuniaxial.for (Hartloper, de Castro e Sousa & Lignos 2021,
  * "Constitutive Modeling of Structural Steels...", J. Struct. Eng.,
  * doi:10.1061/(ASCE)ST.1943-541X.0002964; original UMAT MIT-licensed,
- * github.com/ahartloper/UVC_MatMod — see UVC_LICENSE_MIT.txt).
+ * github.com/ahartloper/UVC_MatMod - see UVC_LICENSE_MIT.txt).
  *
  * WHY C++: this machine has no Intel Fortran; ABAQUS 2024 compiles C++ user
  * subroutines with MSVC (cl) via the documented aba_for_c.h interface. The
@@ -21,7 +21,7 @@
  *               alpha_k = s*C_k/g_k - (s*C_k/g_k - alpha_k^0) e^{-g_k dp}
  *
  * Return mapping: fixed-branch Newton on the LINEAR residual f = |yr| - sy
- * with the branch sign s = sign(yr_trial) frozen at the elastic trial —
+ * with the branch sign s = sign(yr_trial) frozen at the elastic trial -
  * the same scheme as the app's validated surrogate
  * (core/uvc_model.py::_uvc_integrate_impl, correctness fix of 2026-07-03).
  * It converges for coarse increments where the original .for phi-squared
@@ -45,7 +45,7 @@
  * standardU_static.lib's stub objects (ifort-compiled) reference three
  * libifcoremd symbols on their error/string-formatting paths. No Intel
  * runtime exists on this machine; the paths never execute when the model
- * only uses the UMAT supplied here — abort loudly if one is ever called. */
+ * only uses the UMAT supplied here - abort loudly if one is ever called. */
 extern "C" void c_f_pointer_set_scalar(void)
 {
     fprintf(stderr, "FATAL: Intel RTL shim c_f_pointer_set_scalar called\n");

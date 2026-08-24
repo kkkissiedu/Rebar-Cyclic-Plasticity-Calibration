@@ -2,7 +2,7 @@
 core/ohno_wang_model.py
 =======================
 
-Ohno-Wang model I (1993) — N. Ohno & J.-D. Wang, "Kinematic hardening rules with
+Ohno-Wang model I (1993) - N. Ohno & J.-D. Wang, "Kinematic hardening rules with
 critical state of dynamic recovery, Part I: formulation and basic features for
 ratchetting behavior", Int. J. Plasticity 9(3):375-390,
 doi:10.1016/0749-6419(93)90042-O.
@@ -12,7 +12,7 @@ Constitutive equations (uniaxial)
 Backstress decomposition (Ohno & Wang 1993, Eq. 5):
     alpha = sum_{i=1}^{M} alpha_i
 
-Ohno-Wang I kinematic evolution — critical state of dynamic recovery, nonlinear
+Ohno-Wang I kinematic evolution - critical state of dynamic recovery, nonlinear
 form (Ohno & Wang 1993, Eq. 10; the bilinear Eq. 8 is the limit m_i -> inf):
     dalpha_i = C_i*n*dp
                - C_i*(|alpha_i|/r_i)^{m_i} * <n * sign(alpha_i)> * sign(alpha_i)*dp
@@ -24,7 +24,7 @@ form (Ohno & Wang 1993, Eq. 10; the bilinear Eq. 8 is the limit m_i -> inf):
   m_i -> inf recovers the multilinear (bilinear-per-component) rule.
 
 Isotropic hardening (optional Voce extension; Abdel-Karim 2010,
-doi:10.1016/j.ijpvp.2010.02.003 — needed because pure OW-I 1993 is kinematic
+doi:10.1016/j.ijpvp.2010.02.003 - needed because pure OW-I 1993 is kinematic
 only and cannot represent the cyclic softening seen in rebar LCF):
     sigma_y(p) = sigma_y0 + Q*(1 - exp(-b*p))
   Setting **Q = 0 recovers the pure Ohno-Wang I 1993 model** (fixed yield size).
@@ -47,11 +47,11 @@ depended on the caller's strain sampling (up to ~12 MPa drift between the
 254-pt/cycle experimental path and coarser paths at 3% amplitude). With the
 cap, the surrogate and the C++ UMAT (umats/OhnoWang.cpp, same cap) both
 converge to the same step-size-independent response. OW sessions calibrated
-before 2026-07-14 used the un-substepped integrator — re-run before reporting.
+before 2026-07-14 used the un-substepped integrator - re-run before reporting.
 
 FE / UMAT
 ---------
-``umat_file`` points to ``umats/OhnoWang.cpp`` — a C++ UMAT written for this
+``umat_file`` points to ``umats/OhnoWang.cpp`` - a C++ UMAT written for this
 project (2026-07-14, no permissive Fortran OW UMAT was available and this
 machine has no Intel Fortran; ABAQUS compiles it with MSVC). It mirrors this
 integrator exactly (same substep cap); cross-validated to < 0.01 MPa against

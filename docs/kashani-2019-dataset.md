@@ -218,17 +218,17 @@ Material constants (a, b, c, d) for Eqs. (3) and (4), fitted for each diameter g
 | Diameter | Fatigue Parameter | a      | b       | c     | d     | p-value |
 |----------|-------------------|--------|---------|-------|-------|---------|
 | **10 mm diameter bars** |
-|          | α                 | -0.010 | -0.384  | —     | —     | 0.0021; 0.0017 |
-|          | εf                | —      | —       | 0.142 | 0.028 | 0.0030; 0.0040 |
+|          | α                 | -0.010 | -0.384  | -     | -     | 0.0021; 0.0017 |
+|          | εf                | -      | -       | 0.142 | 0.028 | 0.0030; 0.0040 |
 | **12 mm diameter bars** |
-|          | α                 | -0.010 | -0.364  | —     | —     | 0.0041; 0.0027 |
-|          | εf                | —      | —       | 0.146 | 0.023 | 0.0130; 0.0140 |
+|          | α                 | -0.010 | -0.364  | -     | -     | 0.0041; 0.0027 |
+|          | εf                | -      | -       | 0.146 | 0.023 | 0.0130; 0.0140 |
 | **16 mm diameter bars** |
-|          | α                 | -0.010 | -0.333  | —     | —     | 0.0042; 0.0051 |
-|          | εf                | —      | —       | 0.122 | 0.021 | 0.001;  0.001  |
+|          | α                 | -0.010 | -0.333  | -     | -     | 0.0042; 0.0051 |
+|          | εf                | -      | -       | 0.122 | 0.021 | 0.001;  0.001  |
 | **20 mm diameter bars** |
-|          | α                 | -0.015 | -0.223  | —     | —     | 0.0022; 0.0410 |
-|          | εf                | —      | —       | 0.060 | 0.044 | 0.0051; 0.0103 |
+|          | α                 | -0.015 | -0.223  | -     | -     | 0.0022; 0.0410 |
+|          | εf                | -      | -       | 0.060 | 0.044 | 0.0051; 0.0103 |
 
 **Note:** p-values are those computed when Eqs. (3) and (4) are fitted to data.
 
@@ -420,13 +420,13 @@ The paper demonstrates that bar diameter significantly influences low-cycle fati
 
 ### Author Affiliations
 
-1. **Mohammad M. Kashani** (Corresponding Author) — Associate Professor, Faculty of Engineering and Physical Sciences, University of Southampton, Southampton SO17 1BJ, UK. Email: mehdi.kashani@soton.ac.uk
+1. **Mohammad M. Kashani** (Corresponding Author) - Associate Professor, Faculty of Engineering and Physical Sciences, University of Southampton, Southampton SO17 1BJ, UK. Email: mehdi.kashani@soton.ac.uk
 
-2. **Shunyao Cai** — Lecturer, School of Construction Management and Real Estate, Chongqing University, 83 Shabei St., Shapingba, Chongqing 400045, China. Email: shunyao.cai@gmail.com
+2. **Shunyao Cai** - Lecturer, School of Construction Management and Real Estate, Chongqing University, 83 Shabei St., Shapingba, Chongqing 400045, China. Email: shunyao.cai@gmail.com
 
-3. **Sean A. Davis** — Senior Lecturer, School of Chemistry, University of Bristol, Cantock's Close, Bristol BS8 1TS, UK. Email: s.a.davis@bristol.ac.uk
+3. **Sean A. Davis** - Senior Lecturer, School of Chemistry, University of Bristol, Cantock's Close, Bristol BS8 1TS, UK. Email: s.a.davis@bristol.ac.uk
 
-4. **Paul J. Vardanega** (Corresponding Author) — Senior Lecturer in Civil Engineering, Department of Civil Engineering, University of Bristol, Queen's Building, University Walk, Bristol BS8 1TR, UK. Email: p.j.vardanega@bristol.ac.uk
+4. **Paul J. Vardanega** (Corresponding Author) - Senior Lecturer in Civil Engineering, Department of Civil Engineering, University of Bristol, Queen's Building, University Walk, Bristol BS8 1TR, UK. Email: p.j.vardanega@bristol.ac.uk
 
 ### Funding Acknowledgments
 

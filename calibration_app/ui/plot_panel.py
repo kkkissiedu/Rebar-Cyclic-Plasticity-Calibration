@@ -12,9 +12,9 @@ triggering a rescale. A "Reset axes" button restores the locked view after any
 manual zoom.
 
 Curves:
-* experimental cycles (user-selectable) — grey
-* best-so-far — red, bold
-* last evaluated — blue, thin
+* experimental cycles (user-selectable) - grey
+* best-so-far - red, bold
+* last evaluated - blue, thin
 """
 
 from __future__ import annotations
@@ -302,7 +302,7 @@ class PlotPanel:
                      label: Optional[str] = None) -> None:
         """Overlay one model's ABAQUS verification curve (dashed).
 
-        ``key`` identifies the curve for later removal/visibility toggling —
+        ``key`` identifies the curve for later removal/visibility toggling -
         pass the model key ("chaboche"/"uvc"/"ohno_wang") in comparison mode so
         it shares colour with :meth:`add_model_curve`, or any single key (e.g.
         the active model) for a non-comparison run, with ``color`` defaulted to

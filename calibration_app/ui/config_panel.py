@@ -226,7 +226,7 @@ class ConfigPanel:
     def set_cycle_limits(self, total_cycles: int) -> None:
         """Cap the N_fit spinbox at (total_cycles - 1); clamp the current value.
 
-        Never hardcodes a ceiling — the max always comes from the loaded file.
+        Never hardcodes a ceiling - the max always comes from the loaded file.
         """
         max_fit = max(1, int(total_cycles) - 1)
         self.sp_nfit.configure(to=max_fit)

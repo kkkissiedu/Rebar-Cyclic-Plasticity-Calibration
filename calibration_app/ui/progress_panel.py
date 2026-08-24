@@ -4,9 +4,9 @@ ui/progress_panel.py
 
 Independent progress display for the three pipeline stages:
 
-* Stage 1 — Sobol seeding      (X of Y evaluations, %, ETA)
-* Stage 2 — DE / Bayesian      (iteration, current best objective, ETA)
-* Stage 3 — ABAQUS verify      (candidate X of M, elapsed)
+* Stage 1 - Sobol seeding      (X of Y evaluations, %, ETA)
+* Stage 2 - DE / Bayesian      (iteration, current best objective, ETA)
+* Stage 3 - ABAQUS verify      (candidate X of M, elapsed)
 
 Each stage shows an animated bar and a status badge:
 PENDING / RUNNING / DONE / FAILED.

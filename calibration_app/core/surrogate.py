@@ -7,19 +7,19 @@ Model-agnostic pure-Python cyclic-plasticity surrogates.
 Every constitutive model exposes the same interface (`CyclicPlasticityModel`)
 so the optimiser, objective, session system and GUI never need to know which
 model they are driving. Adding a new model (e.g. UVC, Ohno-Wang) means adding a
-new subclass here and registering it in `MODEL_REGISTRY` — nothing else changes.
+new subclass here and registering it in `MODEL_REGISTRY` - nothing else changes.
 
 Currently implemented
 ---------------------
-* ``ChabocheModel`` — native ABAQUS combined isotropic + nonlinear-kinematic
+* ``ChabocheModel`` - native ABAQUS combined isotropic + nonlinear-kinematic
   hardening with a **configurable number of backstresses** (2, 3 or 4).
   The discrete update is the same fully-implicit radial return ABAQUS uses at a
   uniaxial material point, so identified parameters transfer to ABAQUS exactly.
 
-Planned (added after ChabocheModel is verified — see model_recommendation.md)
+Planned (added after ChabocheModel is verified - see model_recommendation.md)
 -----------------------------------------------------------------------------
-* ``UVCModel``      — Updated Voce-Chaboche (Hartloper & Lignos 2021).
-* ``OhnoWangModel`` — Ohno-Wang (1993) with critical-state dynamic recovery.
+* ``UVCModel``      - Updated Voce-Chaboche (Hartloper & Lignos 2021).
+* ``OhnoWangModel`` - Ohno-Wang (1993) with critical-state dynamic recovery.
 
 Constitutive equations (Chaboche, small-strain, rate-independent, uniaxial)
 ---------------------------------------------------------------------------
@@ -206,7 +206,7 @@ class CyclicPlasticityModel(ABC):
         params : sequence of float
             Model parameters in :attr:`param_names` order.
         E, sy0 : float
-            Young's modulus (MPa) and initial yield stress (MPa) — per-run
+            Young's modulus (MPa) and initial yield stress (MPa) - per-run
             inputs, never hardcoded to a steel grade.
 
         Returns
@@ -248,7 +248,7 @@ class ChabocheModel(CyclicPlasticityModel):
     Parameters
     ----------
     n_backstresses : int
-        Number of kinematic backstresses (2, 3 or 4). Default 3 — the
+        Number of kinematic backstresses (2, 3 or 4). Default 3 - the
         minimum-sufficient count for wide-range (1-6%) cyclic strain per the
         literature synthesis (see research_report.md, Q1B).
     """
@@ -370,7 +370,7 @@ class ChabocheModel(CyclicPlasticityModel):
 
 
 # ---------------------------------------------------------------------------
-# Registry — the GUI/optimiser discover available models through this dict.
+# Registry - the GUI/optimiser discover available models through this dict.
 # UVC and Ohno-Wang are registered here once their subclasses land.
 # ---------------------------------------------------------------------------
 def make_chaboche(n_backstresses: int = 3) -> ChabocheModel:

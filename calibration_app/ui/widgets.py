@@ -4,10 +4,10 @@ ui/widgets.py
 
 Small reusable tkinter widgets:
 
-* :class:`ScrollableFrame` — a vertically scrollable container (Canvas +
+* :class:`ScrollableFrame` - a vertically scrollable container (Canvas +
   Scrollbar) so a tall panel of controls never gets clipped on any display.
   Put content into ``.inner``; grid/pack ``.outer``.
-* :class:`Tooltip` — a lightweight hover tooltip for any widget.
+* :class:`Tooltip` - a lightweight hover tooltip for any widget.
 """
 
 from __future__ import annotations
