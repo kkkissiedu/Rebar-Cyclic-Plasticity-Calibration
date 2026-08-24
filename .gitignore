@@ -1,0 +1,24 @@
+__pycache__/
+*.pyc
+*.pyo
+*.nbi
+*.nbc
+.DS_Store
+
+# ABAQUS run artifacts (not produced in this repo, but ignored if a user
+# runs the pipeline locally inside this checkout)
+calibration_sessions/
+input_data/
+*.odb
+*.sim
+*.SMAManifest
+*.lck
+*.com
+*.msg
+*.prt
+*.sta
+*.dat
+*.rpy
+*.rpy.*
+standardU*
+abaqus_v6.env
