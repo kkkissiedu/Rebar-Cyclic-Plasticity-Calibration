@@ -13,16 +13,15 @@ steel grade. This repository validates the pipeline against the open Kashani
 et al. (2019) B500C dataset before it is pointed at the real material.
 
 <p align="center">
+  <img src="figures/app-screenshot.png" width="49%" alt="Calibration app running: live stress-strain plot, verification panel, session controls">
   <img src="figures/fe-verification-2pct-16mm.png" width="49%" alt="FE vs experiment, 2% strain, 16mm bar">
-  <img src="figures/fe-verification-3pct-12mm.png" width="49%" alt="FE vs experiment, 3% strain, 12mm bar">
 </p>
 
-<p align="center"><em>Left: calibrated Chaboche model transferred into a full ABAQUS
-coupon simulation, 2% strain amplitude — surrogate 69.2 MPa vs FE 61.1 MPa
-objective, essentially the same fit. Right: 3% strain — the surrogate (48.9 MPa)
-and FE (67.9 MPa) diverge because strain localisation (barrelling) at the higher
-amplitude is a structural effect a single-element surrogate cannot see; this gap
-is diagnosed, not hidden — see "What the FE check is actually for" below.</em></p>
+<p align="center"><em>Left: the calibration app mid-run — live stress-strain plot,
+per-model verification table, and session controls. Right: the calibrated
+Chaboche model transferred into a full ABAQUS coupon simulation, 2% strain
+amplitude — surrogate 69.2 MPa vs FE 61.1 MPa objective, essentially the same
+fit.</em></p>
 
 ## Why this exists
 
@@ -91,17 +90,25 @@ enforces, for any model using a Chaboche-style backstress decomposition:
 Violations are repaired by projection where possible and otherwise rejected
 before the candidate is ever sent to ABAQUS.
 
-## What the FE check is actually for
+## FE verification channels
 
-The right-hand figure above is the interesting result, not a failure to hide.
-At 3% strain amplitude the calibrated model matches the *surrogate* well, but
-the full 3-D coupon shows an 8%+ local-vs-nominal strain gap — barrelling /
-incipient localisation that a single-element surrogate structurally cannot
-represent. Decomposing the gap (documented in `docs/literature-review.md` and
-the session notes) showed the geometric engineering-vs-true-stress convention
-accounts for only ~1 MPa of it; the rest is genuinely structural. That is
-exactly the class of finding a surrogate-only calibration would never surface —
-which is the reason this pipeline runs the real solver at all.
+Every full-coupon run records two independent channels, deliberately not just
+one:
+
+* **Nominal** — total reaction force on the crosshead node set divided by the
+  original cross-section, against mean crosshead displacement over the gauge
+  length. This is the load-cell/crosshead analogue: immune to local strain
+  localisation, and the one scored against the objective.
+* **Local** — axial stress/strain on the single element closest to
+  mid-gauge (highlighted in the mesh figure above). Kept purely as a
+  diagnostic: if it drifts from the nominal channel, that is evidence of
+  barrelling or incipient buckling at high strain amplitude — a structural
+  effect no single-element surrogate can represent, and something a
+  surrogate-only calibration would never surface.
+
+This dual-channel setup is what lets the pipeline tell "the constitutive
+model is wrong" apart from "the specimen is deforming non-uniformly" —
+two very different problems that a single RMSE number cannot distinguish.
 
 ## Repository layout
 
@@ -134,7 +141,7 @@ scripts/
   run_calibration_headless.py  reproducible GUI-free re-runs
   export_paper_table.py        parameter/results table generator
   plot_fe_comparison.py        standalone ABAQUS-Python post-run comparison
-figures/                   the two verification plots shown above
+figures/                   app screenshot, mesh diagram, FE-verification plots
 ```
 
 ## Running it
@@ -155,7 +162,7 @@ toolchain — see `calibration_app/umats/` for the compile chain.
   available at its own DOI (below); it isn't re-hosted here.
 * **`calibration_sessions/`** — full run history (ABAQUS `.odb`/`.inp` files,
   per-evaluation logs) is gigabytes per session and specific to a local
-  machine; the two figures and `docs/results-table.md` are the curated summary.
+  machine; `figures/` and `docs/results-table.md` are the curated summary.
 * **`FATIGUE.cae` / `FATIGUE_rebuilt.cae`** — proprietary-format ABAQUS binaries
   with no value outside a licensed ABAQUS install; `cae_transfer.py` documents
   and regenerates everything they contain.
