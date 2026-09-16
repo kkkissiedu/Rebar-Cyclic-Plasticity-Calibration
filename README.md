@@ -88,9 +88,15 @@ backstress in disguise), or a saturated-yield floor implying more cyclic
 softening than the material can plausibly sustain. `utils/physics_gate.py`
 enforces, for any model using a Chaboche-style backstress decomposition:
 
-* **γ-separation**: `γ_k / γ_{k+1} ≥ 3` (Chaboche 1986 Eq. 5's own
+* **γ-separation**: `γ_k / γ_{k+1} ≥ 1.5` (Chaboche 1986 Eq. 5's own
   multi-timescale rationale; Bari & Hassan 2000) - added after a real fit on
-  this dataset collapsed all three γ's to within 0.01 of each other.
+  this dataset collapsed all three γ's to within 0.01 of each other. The
+  floor started at 3 and was swept down after batch verification showed it
+  binding on every session: relaxing to 1.5 cut FE-verification RMSE by
+  24-34% on two independent cases with no collapse, while going all the way
+  to 1 (no floor) reproduced the original collapse failure mode with a worse
+  fit than 1.5 - the floor is real, it was just set tighter than the data
+  supports.
 * A saturated-yield floor tied to the *loaded* data's measured peak stress,
   not a hard-coded material constant - this is what keeps the whole pipeline
   grade-agnostic.
@@ -117,6 +123,34 @@ one:
 This dual-channel setup is what lets the pipeline tell "the constitutive
 model is wrong" apart from "the specimen is deforming non-uniformly" -
 two very different problems that a single RMSE number cannot distinguish.
+
+## More FE verification results
+
+Full-coupon runs across both models, both bar geometries in the dataset, and
+several strain amplitudes - all post the γ-separation floor relaxation above:
+
+<p align="center">
+  <img src="figures/fe-verification-2pct-12mm-chaboche.png" width="49%" alt="Chaboche FE vs experiment, 2% strain, 12mm bar">
+  <img src="figures/fe-verification-3pct-16mm-chaboche.png" width="49%" alt="Chaboche FE vs experiment, 3% strain, 16mm bar">
+</p>
+<p align="center">
+  <img src="figures/fe-verification-2pct-12mm-uvc.png" width="49%" alt="UVC FE vs experiment, 2% strain, 12mm bar">
+  <img src="figures/fe-verification-4pct-12mm-chaboche.png" width="49%" alt="Chaboche FE vs experiment, 4% strain, 12mm bar">
+</p>
+
+<p align="center"><em>Top left: Chaboche, 12mm/2% (surrogate 54.0 / FE 50.9
+MPa). Top right: Chaboche, 16mm/3% (49.9 / 55.7 MPa). Bottom left: UVC
+(Hartloper 2021 fixed-branch Newton), 12mm/2% (64.3 / 59.0 MPa). Bottom
+right: Chaboche, 12mm/4% - the lowest surrogate objective of the batch
+(42.7 / 57.4 MPa).</em></p>
+
+Fit quality is strain-amplitude dependent in a physically explainable way:
+2-5% strain is the pipeline's sweet spot (objectives mostly 40-95 MPa on
+500-650 MPa peak stresses); 1% amplitude degrades because the elastic-range
+signal is small relative to the noise floor, and 6% degrades because the
+specimens approach failure (necking/crack onset visible directly in the raw
+hysteresis data, not something a smooth plasticity model should be expected
+to reproduce).
 
 ## Repository layout
 
