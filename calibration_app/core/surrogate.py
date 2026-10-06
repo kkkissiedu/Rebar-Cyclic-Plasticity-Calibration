@@ -256,8 +256,8 @@ class ChabocheModel(CyclicPlasticityModel):
     key = "chaboche"
 
     def __init__(self, n_backstresses: int = 3) -> None:
-        if n_backstresses not in (2, 3, 4):
-            raise ValueError("n_backstresses must be 2, 3 or 4")
+        if n_backstresses not in (1, 2, 3, 4):
+            raise ValueError("n_backstresses must be 1, 2, 3 or 4")
         self.n_backstresses = int(n_backstresses)
         self.display_name = f"Chaboche ({self.n_backstresses}-backstress)"
 

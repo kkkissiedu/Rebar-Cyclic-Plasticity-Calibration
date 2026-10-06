@@ -51,7 +51,7 @@ optimisation + verification *pipeline*:
 
 | Model | Reference | ABAQUS-native? | Backstresses |
 |---|---|---|---|
-| Chaboche combined isotropic/kinematic | Chaboche (1986), *Int. J. Plasticity* 2:149-188 | Yes (`*PLASTIC, HARDENING=COMBINED`) | 2 / 3 / 4 |
+| Chaboche combined isotropic/kinematic | Chaboche (1986), *Int. J. Plasticity* 2:149-188 | Yes (`*PLASTIC, HARDENING=COMBINED`) | 1 / 2 / 3 / 4 |
 | Updated Voce-Chaboche (UVC) | Hartloper, de Castro e Sousa & Lignos (2021), *J. Struct. Eng.*, [doi:10.1061/(ASCE)ST.1943-541X.0002964](https://doi.org/10.1061/(ASCE)ST.1943-541X.0002964) | No - user material | 2 / 3 / 4 |
 | Ohno-Wang model I + Voce isotropic extension | Ohno & Wang (1993), *Int. J. Plasticity* 9(3):375-390 | No - user material | 2 / 3 / 4 |
 
@@ -152,6 +152,55 @@ specimens approach failure (necking/crack onset visible directly in the raw
 hysteresis data, not something a smooth plasticity model should be expected
 to reproduce).
 
+## Monotonic data in, hysteresis loops out
+
+The same pipeline accepts a monotonic tension test (a single ramp is treated as
+one long cycle). `scripts/run_mono_to_loops.py` takes the virgin opening ramp of
+a cyclic test as the monotonic input, calibrates on that ramp alone, and then
+predicts the full cyclic loops (cycles 2-6), scored against the measured loops
+with the same objective, first in the surrogate and optionally in the full 3-D
+ABAQUS coupon.
+
+A monotonic curve fixes the total hardening but not how it splits between
+kinematic and isotropic hardening, or where the reverse yield sits. The run
+therefore takes a Bauschinger prior `r` (cyclic yield stress = r x 500 MPa,
+isotropic hardening off). The elastic modulus is read from the slope of the
+ramp itself, so no cyclic information enters the calibration apart from `r`.
+
+### How many backstresses are needed?
+
+`scripts/run_mono_ablation.py` compares N = 3, 2 and 1 backstresses (8, 6 and 4
+parameters) on 12 short bars (10, 12 and 16 mm at 3-6% strain), Chaboche model
+only, each calibrated on its own monotonic ramp.
+
+<p align="center">
+  <img src="figures/mono-ablation-surrogate.png" width="85%" alt="Predicted-loop error per specimen for N = 3, 2, 1 backstresses">
+</p>
+
+| Mean predicted-loop error (MPa RMSE) | N = 3 | N = 2 | N = 1 |
+|---|---|---|---|
+| Surrogate, 12 bars, r = 0.7 | 96 | 100 | 99 |
+| Full ABAQUS coupon, 6 bars (4% and 5%), r = 0.7 | 102 | 94 | 80 |
+
+With the modulus taken from the ramp and r near 0.7-0.8, a single backstress
+does as well as three. The exceptions are the 3% bars, where N = 1 is 20-30 MPa
+worse. The prior matters more than the backstress count: at r = 0.3 extra
+backstresses help (N = 1 is 25 MPa worse than N = 3), while from r = 0.6 to
+0.8 the three counts agree to within about 4 MPa.
+
+<p align="center">
+  <img src="figures/mono-ablation-prior-sweep.png" width="49%" alt="Mean error against the Bauschinger prior r">
+  <img src="figures/mono-ablation-fe-loops.png" width="49%" alt="Full-coupon ABAQUS loops for N = 1, six bars">
+</p>
+
+Limits of this result: absolute error is about 100 MPa, so it shows that the
+backstress count matters little, not that the route is accurate; r = 0.7 was
+chosen on the same bars it is scored on; the ramps are cut from cyclic files
+rather than taken from a separate tensile test; and the longer bars (L/D 8 to
+15) are excluded because their ramps are sharp-yield curves and their loops
+show compressive buckling. Per-specimen numbers are in
+`docs/mono-ablation-surrogate.csv`.
+
 ## Repository layout
 
 ```
@@ -181,9 +230,12 @@ docs/
                            for the sessions behind the figures above
 scripts/
   run_calibration_headless.py  reproducible GUI-free re-runs
+  run_full_workflow.py         CSV to calibrated fit to ABAQUS coupon, unattended
+  run_mono_to_loops.py         monotonic ramp in, predicted hysteresis loops out
+  run_mono_ablation.py         N = 3 / 2 / 1 backstress ablation driver
   export_paper_table.py        parameter/results table generator
   plot_fe_comparison.py        standalone ABAQUS-Python post-run comparison
-figures/                   app screenshot, mesh diagram, FE-verification plots
+figures/                   app screenshot, mesh diagram, FE-verification and ablation plots
 ```
 
 ## Running it

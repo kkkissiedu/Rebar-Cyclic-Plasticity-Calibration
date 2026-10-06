@@ -70,7 +70,8 @@ class TransferError(RuntimeError):
 
 
 def build_transfer_config(state: dict, cae_path: str,
-                          session_dir: str = None) -> dict:
+                          session_dir: str = None,
+                          auto_submit: bool = False) -> dict:
     """Assemble the transfer config from a session's saved state.
 
     Only native-Chaboche sessions are fully automated. UVC / Ohno-Wang use a
@@ -113,7 +114,9 @@ def build_transfer_config(state: dict, cae_path: str,
     if not sy0:
         raise TransferError("No calibrated sigma_y0 in the session.")
 
-    E_MOD, NU = 200000.0, 0.3
+    # Apparent modulus (session config "E_modulus") when the calibration used
+    # one; default stays the handbook 200 GPa.
+    E_MOD, NU = float(cfg.get("E_modulus") or 200000.0), 0.3
     best_f = [float(v) for v in best]
     if model_key == "chaboche":
         # Param vector: (C1, g1, ..., CN, gN, Q, b) -- surrogate.py order.
@@ -145,10 +148,12 @@ def build_transfer_config(state: dict, cae_path: str,
         if not os.path.exists(umat_src):
             raise TransferError(f"Multiaxial UMAT missing: {umat_src}")
 
+    loading_mode = cfg.get("loading_mode", "cyclic")
     strain_pct = float(cfg.get("strain_pct"))
     gauge = float(cfg.get("gauge_length_mm"))
     diameter = float(cfg.get("diameter_mm", 0.0))
-    n_fit = int(cfg.get("n_fit"))
+    # Monotonic: the whole test is one virgin ramp, not N cyclic reversals.
+    n_fit = 1 if loading_mode == "monotonic" else int(cfg.get("n_fit"))
     amp_mm = strain_pct / 100.0 * gauge
 
     # Session-specific working copy: the base template is NEVER modified.
@@ -177,7 +182,9 @@ def build_transfer_config(state: dict, cae_path: str,
     # cycle 2 (observed: cycle-2 RMSE 114 vs ~65 MPa steady-state, 3data).
     burnin_table: list[list[float]] = []
     data_file = state.get("data_file")
-    if data_file and os.path.exists(data_file):
+    # Monotonic: the ramp itself starts virgin by definition, so there is
+    # no prior-cycle state to condition -- burn-in is a cyclic-only concept.
+    if loading_mode != "monotonic" and data_file and os.path.exists(data_file):
         try:
             from . import data_loader
             d = data_loader.load_experimental(
@@ -198,6 +205,9 @@ def build_transfer_config(state: dict, cae_path: str,
     return {
         "session_name": state.get("name", "?"),
         "model": model_key,
+        "loading_mode": loading_mode,
+        "auto_submit": bool(auto_submit),
+        "job_name": "Calibration_Job",
         "burnin_table": burnin_table,
         "burnin_cycles": 1 if burnin_table else 0,
         # cae_path = the working COPY (what the script edits and the job
@@ -313,6 +323,13 @@ CONFIG = json.loads(r"""__CONFIG_JSON__""")
 # for the TRANSFER_OK/TRANSFER_FAIL marker and the mesh stats.
 LOG_LINES = []
 OUTPUT_LOG = "transfer_to_cae_output.log"
+# Captured BEFORE main() runs, so the auto_submit branch's os.chdir(cae_dir)
+# (so the solve's .inp/.odb land in cae/) can never move where this log is
+# written -- run_transfer_script() always looks for it beside the script,
+# in the session dir. (2026-09-04 bug: without this, auto_submit runs that
+# succeeded completely -- TRANSFER_OK, SOLVE_OK, a real ODB -- were reported
+# as failed because the log landed in cae/ instead.)
+_ORIGINAL_CWD = os.getcwd()
 
 
 def log(msg):
@@ -323,7 +340,7 @@ def log(msg):
 
 def _write_result():
     try:
-        f = open(os.path.join(os.getcwd(), OUTPUT_LOG), "w")
+        f = open(os.path.join(_ORIGINAL_CWD, OUTPUT_LOG), "w")
         try:
             f.write("\n".join(LOG_LINES) + "\n")
         finally:
@@ -508,6 +525,11 @@ def main():
             parameters=ON, table=(tuple(CONFIG["cyclic_hardening_table"]),))
         log("Plastic table: %s" % (CONFIG["plastic_table"],))
         log("Cyclic hardening table: %s" % (CONFIG["cyclic_hardening_table"],))
+        if abs(float(CONFIG["E"]) - 200000.0) > 1.0:
+            target_mat.elastic.setValues(
+                table=((float(CONFIG["E"]), float(CONFIG["nu"])),))
+            log("Elastic modulus set to %.0f MPa (apparent modulus, nu=%.2f)"
+                % (float(CONFIG["E"]), float(CONFIG["nu"])))
 
     # --- 2. loading amplitude (triangular, matches the test file) ---------
     # If a burn-in table is present, the experimental cycle-1 machine ramp
@@ -516,21 +538,29 @@ def main():
     amp = float(CONFIG["amp_mm"])
     T = float(CONFIG["period_s"])
     n_cyc = int(CONFIG["n_cycles"])
+    loading_mode = CONFIG.get("loading_mode", "cyclic")
     burnin = CONFIG.get("burnin_table") or []
     pts = []
     t_off = 0.0
-    if burnin:
-        for tb, vb in burnin:
-            pts.append((float(tb), float(vb)))
-        t_off = T
-        log("Burn-in ramp prepended: %d points over %.0f s" % (len(burnin), T))
-    for c in range(n_cyc):
-        t0 = t_off + c * T
-        pts.append((t0, 0.0))
-        pts.append((t0 + T / 4.0, amp))
-        pts.append((t0 + 3.0 * T / 4.0, -amp))
-    pts.append((t_off + n_cyc * T, 0.0))
-    total_time = t_off + n_cyc * T
+    if loading_mode == "monotonic":
+        # Single virgin ramp 0 -> amp over one period; no burn-in (the ramp
+        # IS the "first cycle", there is no prior cyclic state to condition).
+        pts = [(0.0, 0.0), (T, amp)]
+        total_time = T
+        log("Monotonic ramp: 0 -> %.4f mm over %.1f s" % (amp, T))
+    else:
+        if burnin:
+            for tb, vb in burnin:
+                pts.append((float(tb), float(vb)))
+            t_off = T
+            log("Burn-in ramp prepended: %d points over %.0f s" % (len(burnin), T))
+        for c in range(n_cyc):
+            t0 = t_off + c * T
+            pts.append((t0, 0.0))
+            pts.append((t0 + T / 4.0, amp))
+            pts.append((t0 + 3.0 * T / 4.0, -amp))
+        pts.append((t_off + n_cyc * T, 0.0))
+        total_time = t_off + n_cyc * T
 
     amp_name = None
     for aname in target_model.amplitudes.keys():
@@ -563,9 +593,20 @@ def main():
                    maxInc=T / 50.0,
                    maxNumInc=100000,
                    nlgeom=ON)
-    log("Step '%s': timePeriod=%.1f s (%d scored + %d burn-in cycles), "
-        "nlgeom=ON" % (step_name, total_time, n_cyc,
-                       1 if burnin else 0))
+    if CONFIG.get("model") == "ohno_wang":
+        # OW multiaxial UMAT returns an approximate (non-consistent) tangent;
+        # the full-coupon solve diverged at first yield with the default
+        # symmetric solver ("DISP. CORRECTION TOO LARGE", 2026-09-04).
+        from abaqusConstants import UNSYMMETRIC
+        step.setValues(matrixStorage=UNSYMMETRIC)
+        log("Step '%s': unsymmetric matrix storage (Ohno-Wang UMAT)" % step_name)
+    if loading_mode == "monotonic":
+        log("Step '%s': timePeriod=%.1f s (monotonic ramp), nlgeom=ON"
+            % (step_name, total_time))
+    else:
+        log("Step '%s': timePeriod=%.1f s (%d scored + %d burn-in cycles), "
+            "nlgeom=ON" % (step_name, total_time, n_cyc,
+                           1 if burnin else 0))
 
     # --- 4. displacement BC references the amplitude ----------------------
     # A BC's amplitude (and prescribed value) is STEP-DEPENDENT state, not an
@@ -713,6 +754,67 @@ def main():
     log("Saved %s" % copy_path)
     log("TRANSFER_OK")
 
+    # --- 7. optional auto-submit + wait (headless full-workflow mode) -----
+    # Opt-in (CONFIG["auto_submit"]): submits the job that already exists in
+    # every FATIGUE_rebuilt.cae-derived model ("Calibration_Job", created
+    # once by rebuild_fatigue_model.py, never submitted there) and blocks
+    # until it finishes. Off by default -- the manual GUI workflow (user
+    # sets the work directory and submits by hand) is unchanged.
+    if CONFIG.get("auto_submit"):
+        from abaqusConstants import OFF as _OFF
+        if CONFIG.get("material_mode") == "user":
+            # UMAT models: the DLL MUST exist before submit -- it is built
+            # by a separate `abaqus make` call the caller runs BEFORE this
+            # script (see cae_transfer.build_umat_library / the ordering
+            # note in run_full_workflow.run_transfer_and_solve). If it is
+            # missing here the solve would fail at increment 1 with "USER
+            # SUBROUTINE UMAT IS MISSING" -- check for it explicitly so the
+            # failure is diagnosed here, not discovered later from an ODB
+            # that LOOKS complete but only ran 0.2 CPU-seconds.
+            _dlls = [f for f in os.listdir(os.path.dirname(copy_path))
+                    if f.lower().endswith(".dll")]
+            if not _dlls:
+                fail("auto_submit requested for a UMAT model but no "
+                     "standardU.dll exists yet in %s -- build_umat_library() "
+                     "must run BEFORE this script for UMAT models"
+                     % os.path.dirname(copy_path))
+        cae_dir = os.path.dirname(copy_path)
+        os.chdir(cae_dir)          # .inp/.odb/.dat/.sta land beside the .cae,
+                                    # matching the documented manual convention
+        job_name = CONFIG.get("job_name", "Calibration_Job")
+        if job_name not in my_mdb.jobs.keys():
+            fail("job '%s' not found in the model database - cannot "
+                 "auto-submit" % job_name)
+        job = my_mdb.jobs[job_name]
+        log("SUBMIT: %s (work dir %s)" % (job_name, cae_dir))
+        job.submit(consistencyChecking=_OFF)
+        job.waitForCompletion()
+        odb_path = os.path.join(cae_dir, job_name + ".odb")
+        sta_path = os.path.join(cae_dir, job_name + ".sta")
+        # ABAQUS creates the ODB file even when the solve aborts at
+        # increment 1 (e.g. missing UMAT) -- its mere existence is NOT
+        # proof of a real solve. job.status is NOT reliable here either:
+        # for a Job object retrieved from mdb.jobs[name] (pre-existing in
+        # the .cae, not created fresh via mdb.Job() in this kernel session)
+        # it read back None even on a job the .sta file shows completed
+        # successfully (observed on 2 real UMAT solves). The .sta file's own
+        # completion line is the authoritative, on-disk signal (same
+        # principle as the .rpy-replay diagnosis used earlier the same
+        # day).
+        sta_text = ""
+        if os.path.exists(sta_path):
+            with open(sta_path, "r") as _f:
+                sta_text = _f.read()
+        completed = "THE ANALYSIS HAS COMPLETED SUCCESSFULLY" in sta_text
+        if completed and os.path.exists(odb_path):
+            log("ODB: %s" % odb_path)
+            log("SOLVE_OK")
+        else:
+            fail("job '%s' did not complete (.sta shows %s) - check %s.msg / "
+                 "%s.sta in %s" % (job_name,
+                     "no completion line" if not completed else "completion but no ODB",
+                     job_name, job_name, cae_dir))
+
 
 if __name__ == "__main__":
     try:
@@ -754,6 +856,12 @@ def run_transfer_script(script_path: str, abaqus_cmd: str = "abaqus",
     script itself -- on Windows the CAE kernel's prints never reach the
     captured stdout (only the license banner does), so stdout alone is
     NOT trusted. shell=True on Windows (abaqus is a .bat launcher).
+
+    When ``tcfg["auto_submit"]`` was set, this call ALSO blocks through the
+    full solve (``job.waitForCompletion()`` runs inside the same kernel
+    process) -- pass a much larger ``timeout_s`` (hours, not the ~900 s
+    default) and check for "SOLVE_OK" in the returned output for solve
+    success, separately from the TRANSFER_OK edit-succeeded marker.
     """
     workdir = os.path.dirname(script_path)
     log_path = os.path.join(workdir, OUTPUT_LOG)
@@ -841,6 +949,7 @@ def write_transfer_log(session_dir: str, tcfg: dict, output: str = "") -> str:
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "session_name": tcfg["session_name"],
         "model": tcfg["model"],
+        "loading_mode": tcfg.get("loading_mode", "cyclic"),
         "cae_path": tcfg["cae_path"],
         "base_cae_path": tcfg["base_cae_path"],
         "geometry": {

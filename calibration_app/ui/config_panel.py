@@ -136,11 +136,12 @@ class ConfigPanel:
                      values=list(MODEL_REGISTRY)).grid(row=0, column=1, padx=2)
         ttk.Label(mb, text="Backstresses:").grid(row=0, column=2, sticky="w", padx=2)
         self.var_nbs = tk.IntVar(value=3)
-        sp_nbs = ttk.Spinbox(mb, from_=2, to=4, increment=1, width=4,
+        sp_nbs = ttk.Spinbox(mb, from_=1, to=4, increment=1, width=4,
                              textvariable=self.var_nbs, state="readonly",
-                             values=(2, 3, 4))
+                             values=(1, 2, 3, 4))
         sp_nbs.grid(row=0, column=3, padx=2)
-        Tooltip(sp_nbs, "2: fast; 3: recommended for 1-6% range; "
+        Tooltip(sp_nbs, "1: simplest, fewest parameters; 2: fast; "
+                        "3: recommended for 1-6% range; "
                         "4: near-yield precision")
         self.var_run_all = tk.BooleanVar(value=False)
         ttk.Checkbutton(mb, text="Run all 3 models in sequence",

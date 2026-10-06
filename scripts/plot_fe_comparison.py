@@ -49,6 +49,12 @@ PENALTY = 1.0e9
 _STRAIN_RE = re.compile(r"(\d+)\s*data\.csv$", re.IGNORECASE)
 _DIA_RE = re.compile(r"(\d+)\s*mm\s*dia", re.IGNORECASE)
 _LD_RE = re.compile(r"LD\s*(\d+)", re.IGNORECASE)
+# Monotonic column auto-detect -- mirrors core/data_loader._FORCE_PAT/_DISP_PAT
+# (duplicated, not imported: this script is stdlib-only under ABAQUS python).
+_FORCE_RE = re.compile(r"\b(kn|force|load|newton|n)\b|force|load", re.IGNORECASE)
+_DISP_RE = re.compile(
+    r"\b(mm|disp|displacement|extension|position|stroke|volt)\b|"
+    r"displacement|extension", re.IGNORECASE)
 
 
 # ---------------------------------------------------------------------------
@@ -162,6 +168,54 @@ def load_experimental(path, gauge_mm, diameter_mm, ref_cycle=2):
     return out
 
 
+def load_monotonic_experimental(path, gauge_mm, diameter_mm):
+    """Return the same {time, cycle, strain, stress} shape as
+    load_experimental(), for a monotonic tension CSV -- one pseudo-cycle
+    (cycle=1 throughout) covering the whole ramp, so group_cycles()/
+    fe_objective()/time_chunks() need no special-casing (n_cyc=1 already
+    reduces the generic cyclic-N-cycle logic to "one big chunk")."""
+    area = math.pi * (diameter_mm / 2.0) ** 2
+    header = None
+    f = open(path, "r")
+    try:
+        reader = csv.reader(f)
+        for raw in reader:
+            if raw and any(c.strip() for c in raw):
+                header = [c.strip().strip('"') for c in raw]
+                break
+        if header is None:
+            raise RuntimeError("Empty file: %s" % path)
+        force_idx = disp_idx = None
+        for i, name in enumerate(header):
+            low = name.lower()
+            if force_idx is None and _FORCE_RE.search(low):
+                force_idx = i
+            elif disp_idx is None and _DISP_RE.search(low):
+                disp_idx = i
+        if force_idx is None or disp_idx is None:
+            raise RuntimeError(
+                "Could not auto-detect force/displacement columns in %s "
+                "(header: %s)" % (path, header))
+        disp_vals, force_vals = [], []
+        for raw in reader:
+            if not raw or len(raw) <= max(force_idx, disp_idx):
+                continue
+            try:
+                d = float(raw[disp_idx]); fkn = float(raw[force_idx])
+            except (ValueError, IndexError):
+                continue
+            disp_vals.append(d); force_vals.append(fkn)
+    finally:
+        f.close()
+    if len(disp_vals) < 5:
+        raise RuntimeError("Too few numeric rows parsed from %s" % path)
+    pairs = sorted(zip(disp_vals, force_vals))
+    strain = [d / gauge_mm for d, _ in pairs]
+    stress = [fkn * 1000.0 / area for _, fkn in pairs]
+    return {"time": [float(i) for i in range(len(strain))],
+           "cycle": [1] * len(strain), "strain": strain, "stress": stress}
+
+
 # ---------------------------------------------------------------------------
 # ODB history extraction (S33 + NE33/E33/LE33, SS_AUTO single element)
 # ---------------------------------------------------------------------------
@@ -262,7 +316,8 @@ def load_metadata(odb_path, exp_csv):
     meta = {"model": "chaboche", "n_fit": None, "gauge_length_mm": None,
             "diameter_mm": None, "strain_pct": None,
             "weight_reversals": True, "surrogate_objective_MPa": None,
-            "sigma_y0": None, "period_s": 20.0, "burnin_cycles": 0}
+            "sigma_y0": None, "period_s": 20.0, "burnin_cycles": 0,
+            "loading_mode": "cyclic"}
     log_path = os.path.join(os.path.dirname(os.path.abspath(odb_path)),
                             "transfer_log.json")
     if os.path.exists(log_path):
@@ -272,6 +327,7 @@ def load_metadata(odb_path, exp_csv):
         finally:
             f.close()
         meta["model"] = log.get("model", meta["model"])
+        meta["loading_mode"] = log.get("loading_mode", meta["loading_mode"])
         vt = log.get("values_transferred", {})
         meta["n_fit"] = vt.get("n_cycles")
         meta["period_s"] = vt.get("period_s", 20.0)
@@ -459,8 +515,12 @@ def main():
     out_dir = os.path.dirname(os.path.abspath(odb_path))
 
     meta = load_metadata(odb_path, exp_csv)
-    exp = load_experimental(exp_csv, meta["gauge_length_mm"],
-                            meta["diameter_mm"])
+    if meta.get("loading_mode") == "monotonic":
+        exp = load_monotonic_experimental(exp_csv, meta["gauge_length_mm"],
+                                          meta["diameter_mm"])
+    else:
+        exp = load_experimental(exp_csv, meta["gauge_length_mm"],
+                                meta["diameter_mm"])
     area = math.pi * (meta["diameter_mm"] / 2.0) ** 2
     nominal, local = extract_odb(odb_path, meta["gauge_length_mm"], area)
 

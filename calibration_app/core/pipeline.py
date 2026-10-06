@@ -164,6 +164,7 @@ class CalibrationPipeline:
                 abaqus_cmd="abaqus", E=self.E, nu=self.nu, sy0=self.sy0,
                 gauge_length_mm=cfg["gauge_length_mm"], amp_mm=amp_mm,
                 n_cycles=len(window["target_cycles"]),
+                loading_mode=self.data.get("loading_mode", "cyclic"),
                 concurrent_jobs=cfg["concurrent_jobs"],
                 weight_reversals=cfg["weight_reversals"])
 
@@ -319,6 +320,7 @@ class CalibrationPipeline:
             E=self.E, nu=self.nu, sy0=self.sy0,
             gauge_length_mm=cfg["gauge_length_mm"], amp_mm=amp_mm,
             n_cycles=len(window["target_cycles"]),
+            loading_mode=self.data.get("loading_mode", "cyclic"),
             concurrent_jobs=cfg["concurrent_jobs"],
             weight_reversals=cfg["weight_reversals"])
         sy0b = session.state.get("best_sigma_y0", self.sy0)

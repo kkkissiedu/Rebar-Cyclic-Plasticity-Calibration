@@ -370,6 +370,179 @@ def load_experimental(
     }
 
 
+def detect_loading_mode(path: str) -> str:
+    """Return ``"cyclic"`` or ``"monotonic"`` for a test-data CSV.
+
+    Cyclic (Kashani layout) files have a header row starting with "Notes"
+    and a numeric ``cycle`` column that actually reaches 2+ somewhere in the
+    file. Anything else (arbitrary force/displacement columns, a single
+    ramp, cycle column absent or stuck at 1) is treated as a monotonic
+    tension curve. Best-effort: on any read error, default to "cyclic" so
+    existing behaviour for well-formed Kashani files is untouched.
+    """
+    try:
+        with open(path, "r", newline="") as f:
+            reader = csv.reader(f)
+            header = None
+            for raw in reader:
+                if not raw:
+                    continue
+                joined = ",".join(s.strip() for s in raw).lower()
+                if joined.startswith("notes") or joined.startswith('"notes"'):
+                    header = raw
+                    break
+            if header is None:
+                return "monotonic"
+            clean = [c.strip().strip('"').lower() for c in header]
+            if "cycle" not in clean:
+                return "monotonic"
+            i_c = clean.index("cycle")
+            max_cycle = 0
+            for raw in reader:
+                if not raw or len(raw) <= i_c:
+                    continue
+                try:
+                    max_cycle = max(max_cycle, int(float(raw[i_c])))
+                except ValueError:
+                    continue
+                if max_cycle >= 2:
+                    return "cyclic"
+            return "monotonic"
+    except Exception:
+        return "cyclic"
+
+
+def load_monotonic_experimental(
+    path: str,
+    *,
+    gauge_length_mm: float,
+    bar_diameter_mm: float,
+    sigma_y0: Optional[float] = None,
+    force_idx: Optional[int] = None,
+    disp_idx: Optional[int] = None,
+) -> dict:
+    """Load a monotonic tension CSV into the same dict shape as
+    :func:`load_experimental`, so every downstream consumer (UI status,
+    cycle selector, ``slice_window``, the objective, FE decks) treats it as
+    a one-"cycle" cyclic file and needs no special-casing.
+
+    ``force_idx``/``disp_idx`` override the auto-detected columns (see
+    :func:`monotonic_columns`); pass explicit indices when a column-mapping
+    dialog has resolved ambiguity for the user.
+    """
+    if force_idx is None or disp_idx is None:
+        cols = monotonic_columns(path)
+        force_idx = force_idx if force_idx is not None else cols["force_idx"]
+        disp_idx = disp_idx if disp_idx is not None else cols["disp_idx"]
+    if force_idx is None or disp_idx is None:
+        raise RuntimeError(
+            f"Could not auto-detect force/displacement columns in {path}; "
+            "pass force_idx/disp_idx explicitly.")
+    strain, stress = monotonic_curve(path, bar_diameter_mm, gauge_length_mm,
+                                     force_idx, disp_idx)
+    if strain.size < 5:
+        raise RuntimeError(f"Too few numeric rows parsed from {path}")
+    # Order by strain so a file logged out of order (or with unload/reload
+    # noise) still gives a monotone ramp; a monotonic PULL test is expected
+    # to be single-valued in strain.
+    order = np.argsort(strain)
+    strain, stress = strain[order], stress[order]
+    cycle = np.ones(strain.size, dtype=np.int32)
+    peak_strain = float(strain[-1])
+    return {
+        "time": np.arange(strain.size, dtype=float),
+        "cycle": cycle,
+        "strain": strain,
+        "stress": stress,
+        "burnin_strain": np.array([], dtype=float),
+        "ref_position": 0.0,
+        "cycles_present": [1],
+        "cycle_summary": {
+            "total_cycles": 1,
+            "first_scoreable": 1,
+            "last_cycle": 1,
+            "cycles_with_full_data": [1],
+        },
+        "measured_peak_stress": float(np.max(np.abs(stress))) if stress.size else 0.0,
+        "strain_amplitude_pct": peak_strain * 100.0,
+        "amp_mm": peak_strain * gauge_length_mm,
+        "gauge_length_mm": gauge_length_mm,
+        "bar_diameter_mm": bar_diameter_mm,
+        "sigma_y0": sigma_y0,
+        "data_file": path,
+        "loading_mode": "monotonic",
+    }
+
+
+def load_any_experimental(
+    path: str,
+    *,
+    gauge_length_mm: float,
+    bar_diameter_mm: float,
+    sigma_y0: Optional[float] = None,
+) -> dict:
+    """Dispatch to :func:`load_experimental` or
+    :func:`load_monotonic_experimental` per :func:`detect_loading_mode`.
+
+    The cyclic path additionally gets ``loading_mode="cyclic"`` stamped on
+    for symmetry with the monotonic dict (existing keys are untouched).
+    """
+    if detect_loading_mode(path) == "monotonic":
+        return load_monotonic_experimental(
+            path, gauge_length_mm=gauge_length_mm,
+            bar_diameter_mm=bar_diameter_mm, sigma_y0=sigma_y0)
+    data = load_experimental(path, gauge_length_mm=gauge_length_mm,
+                             bar_diameter_mm=bar_diameter_mm, sigma_y0=sigma_y0)
+    data["loading_mode"] = "cyclic"
+    return data
+
+
+def monotonic_modulus(strain, stress, lo: float = 0.10, hi: float = 0.50) -> Optional[float]:
+    """Apparent elastic modulus (MPa) from a monotonic curve alone: least-
+    squares slope over the points whose stress lies between ``lo`` and ``hi``
+    of the curve's peak stress. Uses no cyclic information, so it is valid for
+    a framework that only has a tensile test. Returns None if too few points.
+    """
+    e = np.asarray(strain, float)
+    s = np.asarray(stress, float)
+    if e.size < 5:
+        return None
+    peak = float(np.max(s))
+    m = (s >= lo * peak) & (s <= hi * peak)
+    if np.count_nonzero(m) < 3:
+        return None
+    return float(np.polyfit(e[m], s[m], 1)[0])
+
+
+def apparent_modulus(data: dict, cycles=(3, 4, 5)) -> Optional[float]:
+    """Apparent elastic modulus (MPa) read from the data's own reversals.
+
+    Strain here is actuator-position / gauge length, so it includes load-train
+    compliance and the unloading slope sits well below the steel modulus
+    (~70-83 GPa measured on the Kashani B500C files vs 200 GPa). Returns the
+    median over the given cycles of the steepest 5-point local slope within
+    the first 12 points after each strain extremum, or ``None`` if the data
+    has no such cycles. Meaningful for cyclic data only.
+    """
+    e, s, c = data["strain"], data["stress"], data["cycle"]
+    slopes = []
+    for cyc in cycles:
+        m = c == cyc
+        if not np.any(m):
+            continue
+        ee, ss = e[m], s[m]
+        for idx in (int(np.argmax(ee)), int(np.argmin(ee))):
+            seg_e, seg_s = ee[idx:idx + 12], ss[idx:idx + 12]
+            best = 0.0
+            for i in range(len(seg_e) - 5):
+                de = seg_e[i + 5] - seg_e[i]
+                if abs(de) > 1e-6:
+                    best = max(best, abs((seg_s[i + 5] - seg_s[i]) / de))
+            if best > 0:
+                slopes.append(best)
+    return float(np.median(slopes)) if slopes else None
+
+
 def slice_window(data: dict, n_fit: int) -> dict:
     """Slice to the first ``n_fit`` scored cycles for the objective.
 

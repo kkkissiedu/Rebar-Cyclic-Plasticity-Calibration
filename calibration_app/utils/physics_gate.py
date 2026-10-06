@@ -73,7 +73,16 @@ ABSOLUTE_MIN_YIELD_FRACTION: float = 0.15
 #: gammas to one value (observed: three gammas = 75.16 on 2data), which is
 #: an over-parameterised single backstress. Ratio, not absolute - grade-
 #: agnostic by construction.
-MIN_GAMMA_RATIO: float = 3.0
+#:
+#: Lowered 3.0 -> 1.5 on 2026-09-16 after a floor sweep (Chaboche 12mm/2%:
+#: 71.0->54.0 MPa RMSE, -24%; UVC 12mm/2%: 97.8->64.3 MPa, -34%) showed the
+#: 3.0 floor was binding on every batch session and leaving real fit
+#: quality on the table. 1.5 sits at the empirical sweet spot: fit keeps
+#: improving as the floor relaxes from 3.0 down to 1.5, then degrades again
+#: below that, and at 1.0 (no floor) two gammas collapse to the identical
+#: value (66.9/44.3/44.3) -- confirming the collapse failure mode is real
+#: and 1.5 is the closest-to-unconstrained value that still avoids it.
+MIN_GAMMA_RATIO: float = 1.5
 
 
 _C_RE = re.compile(r"^C(\d+)$")

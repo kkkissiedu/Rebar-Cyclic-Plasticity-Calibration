@@ -162,10 +162,17 @@ class AppWindow:
             strain_pct = data_loader.detect_strain_amplitude_pct(path)
             gauge = geo["gauge_length_mm"] or float(self.config.var_gauge.get())
             dia = geo["diameter_mm"] or float(self.config.var_diameter.get())
-            data = data_loader.load_experimental(
+            data = data_loader.load_any_experimental(
                 path, gauge_length_mm=gauge, bar_diameter_mm=dia,
                 sigma_y0=float(self.config.var_sy0.get()))
             self.data = data
+            # Monotonic files don't match the {N}data.csv filename convention
+            # (detect_strain_amplitude_pct returns None), so fall back to the
+            # curve's own peak strain -- this is what drives cae_transfer's
+            # amp_mm sizing downstream, so it must be populated for Transfer
+            # to CAE to size the ramp correctly.
+            if data.get("loading_mode") == "monotonic" and strain_pct is None:
+                strain_pct = data.get("strain_amplitude_pct")
             cs = data["cycle_summary"]
             self.total_cycles = cs["last_cycle"]
             warn = "filename not {N}data.csv" if strain_pct is None else None
@@ -241,10 +248,17 @@ class AppWindow:
     def _set_status(self, path, data, strain_pct, gauge, dia) -> None:
         cs = data["cycle_summary"]
         s = strain_pct if strain_pct is not None else "?"
-        self.lbl_status.configure(
-            text=(f"Loaded {os.path.basename(path)}: {cs['total_cycles']} cycles, "
-                  f"peak {data['measured_peak_stress']:.1f} MPa, gauge {gauge:g} mm, "
-                  f"dia {dia:g} mm, strain {s}%"))
+        if data.get("loading_mode") == "monotonic":
+            self.lbl_status.configure(
+                text=(f"Loaded {os.path.basename(path)}: MONOTONIC, "
+                      f"{len(data['strain'])} points, peak "
+                      f"{data['measured_peak_stress']:.1f} MPa, gauge {gauge:g} mm, "
+                      f"dia {dia:g} mm, peak strain {s}%"))
+        else:
+            self.lbl_status.configure(
+                text=(f"Loaded {os.path.basename(path)}: {cs['total_cycles']} cycles, "
+                      f"peak {data['measured_peak_stress']:.1f} MPa, gauge {gauge:g} mm, "
+                      f"dia {dia:g} mm, strain {s}%"))
         self._log(self.lbl_status.cget("text"))
 
     def _parse_cycles(self):
@@ -287,6 +301,7 @@ class AppWindow:
                 return
         self._refresh_model_panels()
         cfg = self.config.get_config()
+        cfg["loading_mode"] = self.data.get("loading_mode", "cyclic")
         bounds = self.config.get_bounds()
         self.progress.reset()
         self.plot.clear_model_curves()

@@ -194,6 +194,7 @@ class FEBackend:
         amp_mm: float,
         period_s: float = 20.0,
         n_cycles: int = 5,
+        loading_mode: str = "cyclic",
         axial_stress: str = "S33",
         axial_strain: str = "E33",
         concurrent_jobs: int = 1,
@@ -208,7 +209,17 @@ class FEBackend:
         self.gauge_length_mm = gauge_length_mm
         self.amp_mm = amp_mm
         self.period_s = period_s
-        self.n_cycles = int(n_cycles)
+        self.loading_mode = loading_mode
+        # Monotonic: a single virgin ramp to amp_mm, no burn-in (there is no
+        # prior cyclic state to condition -- the ramp itself IS cycle "1").
+        # Overrides the class default so every formula that already
+        # references self.BURNIN_CYCLES / self.n_cycles collapses correctly
+        # to one plain ramp of length period_s with no code duplication.
+        if loading_mode == "monotonic":
+            self.n_cycles = 1
+            self.BURNIN_CYCLES = 0
+        else:
+            self.n_cycles = int(n_cycles)
         self.axial_stress = axial_stress
         self.axial_strain = axial_strain
         self.concurrent_jobs = max(1, int(concurrent_jobs))
@@ -255,10 +266,16 @@ class FEBackend:
     BURNIN_CYCLES: int = 1
 
     def _amplitude_lines(self) -> list[str]:
-        """Tabular triangle amplitude, peak = amp_mm; BURNIN_CYCLES + n_cycles
-        total cycles are written, `run_candidate` strips the burn-in portion
-        from the extracted trace before it reaches the objective."""
+        """Tabular amplitude, peak = amp_mm.
+
+        Monotonic: a single virgin ramp 0 -> amp_mm over one period_s, no
+        burn-in and no reversal (BURNIN_CYCLES/n_cycles forced to 0/1 in
+        __init__). Cyclic: BURNIN_CYCLES + n_cycles triangular cycles;
+        `run_candidate` strips the burn-in portion from the extracted trace
+        before it reaches the objective."""
         strain_amp = self.amp_mm / self.gauge_length_mm      # unit-cube disp
+        if self.loading_mode == "monotonic":
+            return [f"{0.0:.6f}, {0.0:.8f}", f"{self.period_s:.6f}, {strain_amp:.8f}"]
         total_cycles = self.BURNIN_CYCLES + self.n_cycles
         pts = []
         for c in range(total_cycles):
