@@ -193,6 +193,20 @@ backstresses help (N = 1 is 25 MPa worse than N = 3), while from r = 0.6 to
   <img src="figures/mono-ablation-fe-loops.png" width="49%" alt="Full-coupon ABAQUS loops for N = 1, six bars">
 </p>
 
+Best single-backstress case, 10 mm bar at 5% strain (full ABAQUS coupon,
+calibrated on the monotonic ramp only, 4 parameters, loop error 60.6 MPa):
+
+<p align="center">
+  <img src="figures/mono-n1-fe-loops-10mm-5pct.png" width="70%" alt="Full-coupon loops, N = 1, 10 mm bar, 5% strain">
+</p>
+
+The other five single-backstress cases (loop error in MPa):
+[10 mm, 4%](figures/mono-n1-fe-loops-10mm-4pct.png) 87.1,
+[12 mm, 4%](figures/mono-n1-fe-loops-12mm-4pct.png) 65.4,
+[12 mm, 5%](figures/mono-n1-fe-loops-12mm-5pct.png) 82.4,
+[16 mm, 4%](figures/mono-n1-fe-loops-16mm-4pct.png) 101.7,
+[16 mm, 5%](figures/mono-n1-fe-loops-16mm-5pct.png) 80.3.
+
 Limits of this result: absolute error is about 100 MPa, so it shows that the
 backstress count matters little, not that the route is accurate; r = 0.7 was
 chosen on the same bars it is scored on; the ramps are cut from cyclic files
