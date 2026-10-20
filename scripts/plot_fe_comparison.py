@@ -422,6 +422,32 @@ def fe_objective(fe_time, fe_strain, fe_stress, exp, target,
     return sum(rmses) / float(len(rmses))
 
 
+def fe_cycle_details(fe_time, fe_strain, fe_stress, exp, target,
+                     weight_reversals, period_s):
+    """Per-cycle diagnostics: {experimental cycle number: {rmse, FE peak
+    tension/compression, experimental peak tension/compression}}. Same
+    resampling and RMSE as :func:`fe_objective`, reported cycle by cycle."""
+    out = {}
+    n_cyc = len(target)
+    if n_cyc == 0 or len(fe_strain) < 4:
+        return out
+    for (c, idx), (lo, hi) in zip(target, time_chunks(fe_time, n_cyc, period_s)):
+        if hi - lo < 4:
+            continue
+        e_exp = [exp["strain"][i] for i in idx]
+        s_exp = [exp["stress"][i] for i in idx]
+        s_sim = fe_stress[lo:hi]
+        a_exp, a_sim = arc_norm(e_exp), arc_norm(fe_strain[lo:hi])
+        if a_exp is None or a_sim is None:
+            continue
+        r = cycle_rmse(e_exp, interp(a_exp, a_sim, s_sim), s_exp, weight_reversals)
+        out[int(c)] = {"rmse": r, "fe_peak_T": max(s_sim), "fe_peak_C": min(s_sim),
+                       "exp_peak_T": max(s_exp), "exp_peak_C": min(s_exp),
+                       "fe_max_strain": max(fe_strain[lo:hi]),
+                       "fe_min_strain": min(fe_strain[lo:hi])}
+    return out
+
+
 def exp_onto_fe(fe_time, fe_strain, exp, target, period_s):
     """Experimental (strain, stress) resampled onto the FE points per cycle
     by arc-length, for the side-by-side fe_comparison.csv columns."""
@@ -610,6 +636,9 @@ def main():
         "fe_objective_local_MPa": obj_local,
         "fe_objective_truestress_MPa": obj_true,
         "fe_objective_MPa": obj,
+        "fe_cycle_details": fe_cycle_details(
+            fe_time, fe_strain, fe_stress, exp, target,
+            meta["weight_reversals"], meta["period_s"]),
         "fe_peak_tension_MPa": peak_t,
         "fe_peak_compression_MPa": peak_c,
         "surrogate_objective_MPa": surr,

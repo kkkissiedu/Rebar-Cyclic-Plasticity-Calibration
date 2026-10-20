@@ -42,15 +42,15 @@ import types
 
 import numpy as np
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from calibration_app.core import data_loader, objective
 from calibration_app.core import pipeline as pipeline_mod
 from calibration_app.session.session_manager import SessionManager
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import run_full_workflow as rfw
 
-PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+PROJ = os.path.dirname(HERE)
 REVERSAL_MM = 0.03          # displacement drop that marks the first reversal
 
 
@@ -58,9 +58,12 @@ def log(msg: str) -> None:
     print(f"[mono2loops] {msg}", flush=True)
 
 
-def extract_monotonic(cyc_path: str, out_csv: str, gauge_mm: float) -> float:
+def extract_monotonic(cyc_path: str, out_csv: str, gauge_mm: float,
+                      compliance_mm_per_kN: float = 0.0) -> float:
     """Write the cycle-1 virgin ramp (zeroed displacement and load) as a
-    monotonic CSV; return the peak strain in percent."""
+    monotonic CSV; return the peak strain in percent. A non-zero
+    ``compliance_mm_per_kN`` removes load-train compliance (displacement minus
+    C * load) before the file is written."""
     rows = []
     with open(cyc_path, newline="") as f:
         reader = csv.reader(f)
@@ -81,6 +84,7 @@ def extract_monotonic(cyc_path: str, out_csv: str, gauge_mm: float) -> float:
     t = np.array([r[0] for r in c1])
     disp = np.array([r[1] for r in c1]) - c1[0][1]
     load = np.array([r[2] for r in c1]) - c1[0][2]
+    disp = disp - float(compliance_mm_per_kN) * load
     drop = np.nonzero(np.maximum.accumulate(disp) - disp > REVERSAL_MM)[0]
     stop = int(drop[0]) if drop.size else len(disp)
     os.makedirs(os.path.dirname(out_csv), exist_ok=True)

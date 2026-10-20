@@ -254,8 +254,13 @@ def load_experimental(
     bar_diameter_mm: float,
     sigma_y0: Optional[float] = None,
     ref_cycle: int = 2,
+    compliance_mm_per_kN: float = 0.0,
 ) -> dict:
     """Load a cyclic LCF CSV and build the calibration data dictionary.
+
+    ``compliance_mm_per_kN`` removes load-train compliance from the strain
+    (series-spring model): position is replaced by ``position - C * load``
+    before the strain is formed. 0 (default) leaves the data untouched.
 
     Parameters
     ----------
@@ -318,6 +323,8 @@ def load_experimental(
     cycle_arr = np.asarray(cycles, np.int32)
     pos_arr = np.asarray(positions, float)
     load_arr = np.asarray(loads, float)
+    if compliance_mm_per_kN:
+        pos_arr = pos_arr - float(compliance_mm_per_kN) * load_arr
 
     mask_ref = cycle_arr == ref_cycle
     if not np.any(mask_ref):

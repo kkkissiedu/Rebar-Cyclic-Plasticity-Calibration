@@ -241,6 +241,9 @@ def build_transfer_config(state: dict, cae_path: str,
         "n_cycles": n_fit,
         "step_name": STEP_NAME,
         "weight_reversals": bool(cfg.get("weight_reversals", True)),
+        # Largest increment = period / max_inc_divisor (default 50, as before).
+        # A larger divisor lets the solver land closer to the amplitude peaks.
+        "max_inc_divisor": float(cfg.get("max_inc_divisor", 50.0)),
         "surrogate_objective_MPa": state.get("best_objective"),
         "surrogate_peak_tension_MPa": state.get("best_peak_tension"),
         "surrogate_peak_compression_MPa": state.get("best_peak_compression"),
@@ -590,7 +593,7 @@ def main():
     step.setValues(timePeriod=total_time,
                    initialInc=T / 200.0,
                    minInc=T / 1.0e6,
-                   maxInc=T / 50.0,
+                   maxInc=T / float(CONFIG.get("max_inc_divisor", 50.0)),
                    maxNumInc=100000,
                    nlgeom=ON)
     if CONFIG.get("model") == "ohno_wang":
@@ -797,7 +800,8 @@ def main():
         # for a Job object retrieved from mdb.jobs[name] (pre-existing in
         # the .cae, not created fresh via mdb.Job() in this kernel session)
         # it read back None even on a job the .sta file shows completed
-        # successfully (observed on 2 real UMAT solves). The .sta file's own
+        # successfully (observed 2026-09-04 on 2 real UMAT solves -- see
+        # CLAUDE.md "Full-workflow automation"). The .sta file's own
         # completion line is the authoritative, on-disk signal (same
         # principle as the .rpy-replay diagnosis used earlier the same
         # day).
@@ -980,7 +984,7 @@ def write_transfer_log(session_dir: str, tcfg: dict, output: str = "") -> str:
                           * tcfg["period_s"],
             "initialInc": tcfg["period_s"] / 200.0,
             "minInc": tcfg["period_s"] / 1.0e6,
-            "maxInc": tcfg["period_s"] / 50.0,
+            "maxInc": tcfg["period_s"] / float(tcfg.get("max_inc_divisor", 50.0)),
             "maxNumInc": 100000,
             "nlgeom": "ON",
         },

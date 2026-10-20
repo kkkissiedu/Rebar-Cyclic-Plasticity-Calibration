@@ -126,6 +126,9 @@ two very different problems that a single RMSE number cannot distinguish.
 
 ## More FE verification results
 
+These figures come from an earlier calibration setup (weighted objective, physics gate, handbook modulus);
+see the section above for the current protocols and what the coupon check showed.
+
 Full-coupon runs across both models, both bar geometries in the dataset, and
 several strain amplitudes - all post the γ-separation floor relaxation above:
 
@@ -152,68 +155,82 @@ specimens approach failure (necking/crack onset visible directly in the raw
 hysteresis data, not something a smooth plasticity model should be expected
 to reproduce).
 
-## Monotonic data in, hysteresis loops out
+## Validation and findings
 
-The same pipeline accepts a monotonic tension test (a single ramp is treated as
-one long cycle). `scripts/run_mono_to_loops.py` takes the virgin opening ramp of
-a cyclic test as the monotonic input, calibrates on that ramp alone, and then
-predicts the full cyclic loops (cycles 2-6), scored against the measured loops
-with the same objective, first in the surrogate and optionally in the full 3-D
-ABAQUS coupon.
+Results are reported against protocols written before the runs (`docs/protocols/`), with decision rules
+fixed in advance and every outcome reported. The first two protocols (V1, V2) used choices that were
+tuned on the rebar data and are superseded; they are kept for the record.
 
-A monotonic curve fixes the total hardening but not how it splits between
-kinematic and isotropic hardening, or where the reverse yield sits. The run
-therefore takes a Bauschinger prior `r` (cyclic yield stress = r x 500 MPa,
-isotropic hardening off). The elastic modulus is read from the slope of the
-ramp itself, so no cyclic information enters the calibration apart from `r`.
+### Benchmark on extensometer coupon data (V5)
 
-### How many backstresses are needed?
-
-`scripts/run_mono_ablation.py` compares N = 3, 2 and 1 backstresses (8, 6 and 4
-parameters) on 12 short bars (10, 12 and 16 mm at 3-6% strain), Chaboche model
-only, each calibrated on its own monotonic ramp.
+To separate the method from the quirks of the rebar data, the calibration was run on the open
+true stress-true strain coupon database of the UVC authors (Hartloper, de Castro e Sousa and Lignos;
+extensometer strain, five protocols per steel). Six steels were used: A500, A992 web and flange,
+BCP325, BCR295, HYP400. The model is plain Voce-Chaboche with N = 1, 2, 3 backstresses, E and the initial
+yield fitted, and the published error metric (UVC Eqs. 30-33).
 
 <p align="center">
-  <img src="figures/mono-ablation-surrogate.png" width="85%" alt="Predicted-loop error per specimen for N = 3, 2, 1 backstresses">
+  <img src="figures/benchmark-backstress-count.png" width="95%" alt="Normalised error against number of backstresses, joint and held-out">
 </p>
 
-| Mean predicted-loop error (MPa RMSE) | N = 3 | N = 2 | N = 1 |
+| Normalised error (%), mean of six steels | N = 1 | N = 2 | N = 3 |
 |---|---|---|---|
-| Surrogate, 12 bars, r = 0.7 | 96 | 100 | 99 |
-| Full ABAQUS coupon, 6 bars (4% and 5%), r = 0.7 | 102 | 94 | 80 |
+| Joint fit of five protocols | 7.83 | 6.67 | 6.26 |
+| Leave-one-protocol-out (held-out protocol) | 10.40 | 8.55 | 8.30 |
 
-With the modulus taken from the ramp and r near 0.7-0.8, a single backstress
-does as well as three. The exceptions are the 3% bars, where N = 1 is 20-30 MPa
-worse. The prior matters more than the backstress count: at r = 0.3 extra
-backstresses help (N = 1 is 25 MPa worse than N = 3), while from r = 0.6 to
-0.8 the three counts agree to within about 4 MPa.
+* Our N = 2 result is within 0.5 points of the published Voce-Chaboche error on all six steels
+  (mean 6.67 against 6.65), which checks the objective, optimiser and integrator against the literature.
+* One backstress is about 25 % worse than three, in-sample and held-out, and more than 20 % worse on
+  four of six steels, so it does not meet the pre-set sufficiency rule. Two backstresses are within
+  7 % (in-sample) and 3 % (held-out) of three. The UVC papers also use two.
+* Parameters are poorly identified: 5, 11 and 14 of 18 fits touch a limit of the parameter box for
+  N = 1, 2, 3. Only aggregates such as the total backstress are stable.
+
+### Rebar data, point-level calibration (V3)
+
+The Kashani et al. (2019) B500C data were calibrated with a textbook procedure: strain as recorded,
+E measured from the unloading slopes of the calibration cycles, a generic parameter box, no prior, no
+weighting, no physics gate, three seeds. Calibrating on cycles 2-3 and validating on cycles 4-6 of the
+same test gives 43, 39 and 39 MPa (N = 1, 2, 3) against 112 MPa for a model without hardening; testing
+on another strain amplitude of the same diameter gives 58, 55 and 54 MPa.
 
 <p align="center">
-  <img src="figures/mono-ablation-prior-sweep.png" width="49%" alt="Mean error against the Bauschinger prior r">
-  <img src="figures/mono-ablation-fe-loops.png" width="49%" alt="Full-coupon ABAQUS loops for N = 1, six bars">
+  <img src="figures/rebar-validation-per-bar.png" width="80%" alt="Validation error per bar for N = 1, 2, 3 and the no-hardening reference">
 </p>
-
-Best single-backstress case, 10 mm bar at 5% strain (full ABAQUS coupon,
-calibrated on the monotonic ramp only, 4 parameters, loop error 60.6 MPa):
-
 <p align="center">
-  <img src="figures/mono-n1-fe-loops-10mm-5pct.png" width="70%" alt="Full-coupon loops, N = 1, 10 mm bar, 5% strain">
+  <img src="figures/rebar-loops-n1-n3.png" width="60%" alt="Measured and modelled loops, two bars, N = 1 and N = 3">
 </p>
 
-The other five single-backstress cases (loop error in MPa):
-[10 mm, 4%](figures/mono-n1-fe-loops-10mm-4pct.png) 87.1,
-[12 mm, 4%](figures/mono-n1-fe-loops-12mm-4pct.png) 65.4,
-[12 mm, 5%](figures/mono-n1-fe-loops-12mm-5pct.png) 82.4,
-[16 mm, 4%](figures/mono-n1-fe-loops-16mm-4pct.png) 101.7,
-[16 mm, 5%](figures/mono-n1-fe-loops-16mm-5pct.png) 80.3.
+Caveats: almost every fit sits on a limit of the parameter box (mostly the softening term), 21 of 108
+fits end with a negative saturated yield radius, validation on later cycles of the same test is weak,
+and the fits overshoot the virgin first-cycle ramp because the first cycle was not scored.
 
-Limits of this result: absolute error is about 100 MPa, so it shows that the
-backstress count matters little, not that the route is accurate; r = 0.7 was
-chosen on the same bars it is scored on; the ramps are cut from cyclic files
-rather than taken from a separate tensile test; and the longer bars (L/D 8 to
-15) are excluded because their ramps are sharp-yield curves and their loops
-show compressive buckling. Per-specimen numbers are in
-`docs/mono-ablation-surrogate.csv`.
+### Full 3-D coupon (V3-F and V4-T)
+
+The same parameters in the ABAQUS coupon give about twice the error of the point-level model (89.9
+against 44.5 MPa on cycles 4-6, eight jobs), with the coupon's peak stress decaying about twice as fast
+as in the tests (26 % against 14 % between cycles 2 and 6). Audits against the ODB files show that the
+material card behaves like the surrogate at element level and that the extra error is structural
+(strain localisation and lateral bowing). Representing the machine as a series spring with the bar at
+200 GPa, which is the physically correct form for an LVDT-measured test, did not reduce the gap
+(105.6 MPa), so the machine compliance is not the main cause. The cause remains open.
+
+### What is established and what is not
+
+* Established: the calibration method reproduces published fit errors; two backstresses are the
+  minimum on proper data; one backstress costs about 25 % more error there (about 10 % on the rebar
+  data); the rebar data are LVDT-measured (apparent modulus 54-74 GPa against about 200 GPa for the bar),
+  never stabilise, and sit at the buckling threshold.
+* Not established: coupon-level accuracy on the rebar; behaviour on the target scrap rebar; any result
+  from extensometer-measured rebar LCF data (none was available).
+
+### Superseded exploratory work
+
+Calibrating from the monotonic ramp of each test alone, with a tuned prior on the cyclic yield stress,
+was explored first (`scripts/run_mono_to_loops.py`, `scripts/run_mono_ablation.py`). Under a
+pre-registered protocol (V2) it was no better than a no-information model on later cycles (129-135
+against 133 MPa), and the earlier claim that one backstress matches three on that route does not hold
+under a cleaner protocol.
 
 ## Repository layout
 
@@ -245,11 +262,14 @@ docs/
 scripts/
   run_calibration_headless.py  reproducible GUI-free re-runs
   run_full_workflow.py         CSV to calibrated fit to ABAQUS coupon, unattended
-  run_mono_to_loops.py         monotonic ramp in, predicted hysteresis loops out
-  run_mono_ablation.py         N = 3 / 2 / 1 backstress ablation driver
+  v5_study.py                  benchmark on extensometer coupon data (set UVC_DATA)
+  v3_study.py, v2_study.py     rebar calibration and loaders
+  v3_fe.py, v4_spring_test.py  full-coupon ABAQUS runs, with and without the series spring
+  run_mono_to_loops.py         monotonic-ramp route (superseded, see above)
+  run_mono_ablation.py         its backstress ablation driver (superseded)
   export_paper_table.py        parameter/results table generator
   plot_fe_comparison.py        standalone ABAQUS-Python post-run comparison
-figures/                   app screenshot, mesh diagram, FE-verification and ablation plots
+figures/                   app screenshot, mesh diagram, FE-verification, benchmark and rebar plots
 ```
 
 ## Running it
