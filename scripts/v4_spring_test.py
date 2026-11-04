@@ -73,8 +73,16 @@ def edit_inp(text: str, k_m: float) -> str:
             continue
         # 2. replace the top-face history/reaction set by the actuator node + spring
         if low.startswith("*nset, nset=top_auto"):
-            m = re.match(r"\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", lines[i + 1])
-            first, last = int(m.group(1)), int(m.group(2))
+            j = i + 1
+            ids = []
+            while j < len(lines) and not lines[j].lstrip().startswith("*"):
+                ids += [int(t) for t in lines[j].replace(",", " ").split()]
+                j += 1
+            if "generate" in low:                     # "first, last, step"
+                top_nodes = list(range(ids[0], ids[1] + 1, ids[2] if len(ids) > 2 else 1))
+            else:                                     # explicit node list (12 mm deck)
+                top_nodes = ids
+            first = top_nodes[0]
             out += [
                 "*Node",
                 f" {ACT}, 0., 0., 0.",
@@ -86,11 +94,11 @@ def edit_inp(text: str, k_m: float) -> str:
                 f" {ACT}, Specimen-1.{first}, {ACT}",
                 "*Spring, elset=MACH_SPRING", "3, 3", f" {k_m:.6g}",
             ]
-            i += 2
+            i = j
             continue
         # 3. after the assembly: spring property + plane-grip equations
         if low == "*end assembly":
-            for nid in range(first + 1, last + 1):
+            for nid in top_nodes[1:]:
                 out += ["*Equation", "2", f"Specimen-1.{nid}, 3, 1., Specimen-1.{first}, 3, -1."]
                 n_top_eq += 1
             out.append(ln)
@@ -99,7 +107,8 @@ def edit_inp(text: str, k_m: float) -> str:
         # 4. drive the actuator node, not the top face
         if low.startswith("*boundary, amplitude=cyclicstrain"):
             out.append(ln)
-            out += ["_PickedSet5, 1, 1", "_PickedSet5, 2, 2", "ACT_NODE, 1, 1", "ACT_NODE, 2, 2",
+            lat = lines[i + 1].split(",")[0].strip()      # lateral top constraint set (name differs per deck)
+            out += [f"{lat}, 1, 1", f"{lat}, 2, 2", "ACT_NODE, 1, 1", "ACT_NODE, 2, 2",
                     "ACT_NODE, 3, 3, 1."]
             i += 4
             continue

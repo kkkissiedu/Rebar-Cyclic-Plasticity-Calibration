@@ -20,8 +20,9 @@ et al. (2019) B500C dataset before it is pointed at the real material.
 <p align="center"><em>Left: the calibration app mid-run - live stress-strain plot,
 per-model verification table, and session controls. Right: the calibrated
 Chaboche model transferred into a full ABAQUS coupon simulation, 2% strain
-amplitude - surrogate 69.2 MPa vs FE 61.1 MPa objective, essentially the same
-fit.</em></p>
+amplitude - surrogate 69.2 MPa vs FE 61.1 MPa objective. These two figures come
+from the earlier setup; see "Validation and findings" below for the current
+protocols.</em></p>
 
 <p align="center">
   <img src="figures/abaqus-deformed-mesh-mises.png" width="70%" alt="ABAQUS coupon, deformed shape, Mises stress contour">
@@ -215,14 +216,66 @@ material card behaves like the surrogate at element level and that the extra err
 200 GPa, which is the physically correct form for an LVDT-measured test, did not reduce the gap
 (105.6 MPa), so the machine compliance is not the main cause. The cause remains open.
 
+### Re-calibration with the benchmark lessons (V6)
+
+The rebar data were calibrated again with the practice used in the UVC papers (protocol:
+[`docs/protocols/V6_PROTOCOL.md`](docs/protocols/V6_PROTOCOL.md), frozen before any result existed). Changes
+from V3: the virgin first cycle is part of the objective; data in true stress and true strain from the start of
+the test; E is fitted; the isotropic term is not allowed to soften (Q >= 1e-4); the strain path is refined to
+increments of at most 1e-4; the error is the UVC metric. No gate, no weighting, no prior. Cycles 1-3 are used to
+calibrate and cycles 4-6 of the same test to validate. In the coupon the bar has E = 200 GPa and the machine
+compliance is a spring in series, with stiffness taken from the fitted E.
+
+| Result (mean of bars) | N = 1 | N = 2 | N = 3 |
+|---|---|---|---|
+| Point level, cycles 4-6 error, 12 bars, non-softening (MPa) | 78.2 | 78.8 | 79.1 |
+| Point level, softening allowed (MPa) | 56.3 | 50.5 | 49.8 |
+| Another strain amplitude of the same diameter, non-softening (MPa) | 115.6 | 126.3 | 128.6 |
+| ABAQUS coupon, cycles 4-6 error, 6 bars, non-softening (MPa) | 53.9 | 44.6 | 39.1 |
+| ABAQUS coupon, 4 bars, softening allowed (MPa) | 233.1 | 113.8 | 139.4 |
+
+An elastic-perfectly-plastic model with E and yield fitted on the same window gives 87.3 MPa at the point level.
+The earlier coupon runs with the V3 parameters gave 89.9 MPa (V3-F) and 105.6 MPa (V4-T).
+
+<p align="center">
+  <img src="figures/v6-coupon-loops.png" width="70%" alt="ABAQUS coupon against experiment, 10 and 16 mm bars at 4 and 5 % strain, N = 1, 2, 3">
+</p>
+<p align="center">
+  <img src="figures/v6-coupon-errors.png" width="95%" alt="Coupon error per bar for N = 1, 2, 3, non-softening and softening fits">
+</p>
+
+What the results say:
+
+* The coupon check passes the pre-set criteria for every N (mean error at most 67.4 MPa, tension-peak decay gap
+  below 12.9 points), and the coupon now agrees with the experiment far better than with the V3 parameters. The
+  decay gap is 6.3, 6.5 and 7.2 points against 12.9 (V3-F) and 16.2 (V4-T).
+* The point-level success rule was not met: the non-softening N = 2 error is 78.8 MPa against a limit of 48.6 MPa.
+  The non-softening constraint costs accuracy at the point level, and the three N give the same error there
+  because the constraint dominates.
+* One backstress is not sufficient by the pre-set rule in the coupon: its error is 1.38 times that of three
+  backstresses and more than 20 % worse on 4 of 6 bars. On the 12 mm bars it is as good as three (35.6 against
+  35.3 and 34.3 against 32.1 MPa), on 16 mm it is 12 and 13 MPa worse, on 10 mm 21 and 40 MPa worse. Two
+  backstresses narrowly miss the rule (ratio 1.14).
+* Fits that allow softening are better at the point level but unusable in the coupon: the yield stress falls
+  towards zero and the errors are 114-233 MPa.
+* Parameters are poorly identified. The isotropic term sits on a limit of its box in nearly all fits, so it is
+  effectively inactive, and most fits touch a limit of the box somewhere.
+
+Caveats: validation uses later cycles of the same test; carrying the 3 % bar to other amplitudes gives 116-129 MPa;
+the coupon covers 6 bars at seed 1 (the 3 % and 6 % bars were not run); the success criteria were set by us before
+the runs, not taken from a standard; the coupon and point-level errors use different metrics and are not directly
+comparable. Two input-file bugs in the 12 mm coupon runs were found and fixed during the work (a hard-coded node-set
+name, then a node list read as a range); the failed and invalid records are archived and logged as deviations in the
+protocol, and only the final runs are reported.
+
 ### What is established and what is not
 
-* Established: the calibration method reproduces published fit errors; two backstresses are the
-  minimum on proper data; one backstress costs about 25 % more error there (about 10 % on the rebar
-  data); the rebar data are LVDT-measured (apparent modulus 54-74 GPa against about 200 GPa for the bar),
-  never stabilise, and sit at the buckling threshold.
-* Not established: coupon-level accuracy on the rebar; behaviour on the target scrap rebar; any result
-  from extensometer-measured rebar LCF data (none was available).
+* Established: the calibration method reproduces published fit errors on extensometer data; two backstresses
+  are the minimum there, and one backstress costs about 25 % more error; on the rebar coupon, one backstress
+  costs about 38 % more than three and two about 14 % more; the rebar data are LVDT-measured (apparent modulus
+  54-74 GPa against about 200 GPa for the bar), never stabilise, and sit at the buckling threshold.
+* Not established: validation of the rebar calibration on independent data; behaviour on the target scrap rebar;
+  any result from extensometer-measured rebar LCF data (none was available). The rebar results are exploratory.
 
 ### Superseded exploratory work
 
@@ -265,6 +318,7 @@ scripts/
   v5_study.py                  benchmark on extensometer coupon data (set UVC_DATA)
   v3_study.py, v2_study.py     rebar calibration and loaders
   v3_fe.py, v4_spring_test.py  full-coupon ABAQUS runs, with and without the series spring
+  v6_study.py, v6_fe.py        re-calibration with the benchmark practice, and its coupon runs
   run_mono_to_loops.py         monotonic-ramp route (superseded, see above)
   run_mono_ablation.py         its backstress ablation driver (superseded)
   export_paper_table.py        parameter/results table generator
