@@ -247,8 +247,10 @@ The earlier coupon runs with the V3 parameters gave 89.9 MPa (V3-F) and 105.6 MP
 What the results say:
 
 * The coupon check passes the pre-set criteria for every N (mean error at most 67.4 MPa, tension-peak decay gap
-  below 12.9 points), and the coupon now agrees with the experiment far better than with the V3 parameters. The
-  decay gap is 6.3, 6.5 and 7.2 points against 12.9 (V3-F) and 16.2 (V4-T).
+  below 12.9 points), and the coupon now agrees with the experiment better than with the V3 parameters. On the
+  10 and 16 mm bars, where the V3-F and V4-T baselines were run, the mean error is 63.3, 50.5 and 41.8 MPa for
+  N = 1, 2, 3 against 89.9 and 105.6 MPa, and the decay gap is 9.0, 8.1 and 9.1 points against 12.9 and 16.2.
+  Adding the 12 mm bars lowers the means to the values in the table above.
 * The point-level success rule was not met: the non-softening N = 2 error is 78.8 MPa against a limit of 48.6 MPa.
   The non-softening constraint costs accuracy at the point level, and the three N give the same error there
   because the constraint dominates.
