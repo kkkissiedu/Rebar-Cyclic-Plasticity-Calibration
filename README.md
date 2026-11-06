@@ -275,7 +275,8 @@ protocol, and only the final runs are reported.
 * Established: the calibration method reproduces published fit errors on extensometer data; two backstresses
   are the minimum there, and one backstress costs about 25 % more error; on the rebar coupon, one backstress
   costs about 38 % more than three and two about 14 % more; the rebar data are LVDT-measured (apparent modulus
-  54-74 GPa against about 200 GPa for the bar), never stabilise, and sit at the buckling threshold.
+  54-74 GPa against about 200 GPa for the bar) and never stabilise: peak stress falls every cycle at high
+  strain amplitude, and the literature disagrees on whether bars of this slenderness (L/D 5) buckle.
 * Not established: validation of the rebar calibration on independent data; behaviour on the target scrap rebar;
   any result from extensometer-measured rebar LCF data (none was available). The rebar results are exploratory.
 
