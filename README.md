@@ -411,3 +411,14 @@ Kashani test files, 20 s per cycle, with the inputs and warnings as `#` comment 
 The "Cycles" box picks which cycles to export (blank = cycle 2 and four points of the predicted life).
 
 ![Predictor example](figures/predictor-example.png)
+
+Steel presets: the Predict window has a "Steel preset" list. The default is the fitted steel (f_s = f_e = 1). The four scrap-source presets (sources A to D)
+set f_s from each source's measured peak stress in tension against the B500C values of Moodley et al. (2024); f_e stays 1. These factors are HYPOTHESES from
+monotonic tests only. No cyclic test of those bars has checked them, and the match of the Moodley bars to the Kashani bars is not confirmed. Presets live in
+`calibration_app/predictor/scrap_presets.json`; replace them once cyclic tests of the scrap bars exist.
+
+Scrap-bar tension tests: `scripts/uts_parse.py` reads universal-testing-machine exports (force, stress, crosshead and extensometer channels) and writes a per-bar
+table with quality flags; the folder is set with `UNIAXIAL_DIR` and the files are not in this repository. The extensometer gauge length is not recorded, so each
+elastic slope is converted to an implied gauge length assuming E = 200 GPa; the clean fits cluster at about 50 mm, and bars whose extensometer is missing, noisy or
+inconsistent (about two thirds of the 30 bars) are flagged and used for strength only. Aborted tests are flagged. `scripts/scrap_factors.py` turns the per-source mean
+peak stress into the preset factors against the B500C tension values of Moodley et al. (2024).
