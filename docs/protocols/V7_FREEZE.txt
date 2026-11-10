@@ -1,0 +1,18 @@
+V7_PROTOCOL.md frozen 2026-11-10T05:06:45
+sha256 669a810e2a7e1620e210c47a33efa66d26ac4ceec6faf7ba2a23d147c30cc715
+Sealed set: all D = 16 mm files (input_data/16mm dia/*). No script may read them before the framework is frozen.
+Any change to V7_PROTOCOL.md after this date must be an appended, dated amendment, and the hash above will then differ by design.
+AMENDMENT 1 appended 2026-11-10T07:18:25: loop layer replaced by core + buckling distortion; sha256 of the whole file after the amendment c834fd72a6688c52c79829d023a84f754cea8178c733ba9b14337e97a17e3df2
+AMENDMENT 2 appended 2026-11-10T09:03:12: expected loop over log-normal life uncertainty; sha256 of the whole file after the amendment e38b47d800888f060e196107c9e001b94c5fe6e633ca5295fb0a639026d7ce92
+AMENDMENT 3 appended 2026-11-10T09:27:18: framework frozen; protocol sha256 6ec17e16ebce526a21e50d45b20298db385d4a931fdfb005002e017738a4c355
+CODE v7_data.py sha256 2ab4061c11c50344bc7db4d693bb8855c355a4470ba2c48c269cf7bdc929b698
+CODE v7_life.py sha256 02f4c9c080d9a2dc4ebc9f44f0b8736d36a266b173d3f2d04e0d743959190881
+CODE v7_decay.py sha256 64612fbe5f2922f41fb58224441998a80066ef3cd20bb14ea5442a4898878b72
+CODE v7_loop.py sha256 0b9b1ef5e1b08d4e2f2038897f89d544bd7e6ba1b9a9c119b6c06cc1b7ad7878
+CODE v7_buckle.py sha256 75b66bc481fafb7f99f64c5271e7d99b6149c23867b8d591828b29c3a4be3293
+CODE v7_loops_cv.py sha256 24434b8124847154824bf3e544ddfd8a323602b51a2a7f0432d1fff50e20f890
+CODE v7_predict.py sha256 1952c86bfa3241bcc88c0a4aad8c9a568507316829c6b52097d87bf4c58669a2
+CODE v7_final.py sha256 a7fcc9bae89bfdb43ba4fea6c1ec3fef8bc384e00ff22388460188cc2690c895
+SEALED SET USED 2026-11-10T09:28:47: single evaluation of the frozen framework; results in calibration_sessions/v7/final_sealed.json
+RESULTS appended 2026-11-10T09:31:46: sealed evaluation results recorded; protocol sha256 b36845a005551747a9459e46c6ad570ab0a0c533fe9c6059f191f2bae88be8f2
+EXPORT 2026-11-10T09:57:00: shipped parameters refit on all 120 files; predictor_params.json sha256 a1bddcd941ccc51c1813fe62fe10df353ba728894fbcee66c2a28616818645cf
