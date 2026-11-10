@@ -75,3 +75,12 @@ V5-C identifiability: fits touching a box limit 5/18 (N=1), 11/18 (N=2), 14/18 (
 
 ## Deviations
 (none)
+
+## Note added 2026-11-09 (the text above is unchanged)
+The six 'published' Voce-Chaboche values listed above could not be traced to a source we can open. The open companion paper
+(de Castro e Sousa, Hartloper and Lignos, J. Eng. Mech. 2021, Table 1 for the steel IDs and protocols) gives Voce-Chaboche N=2 values
+of 6.23, 5.75, 5.43, 4.88, 6.24 and 5.22 for IDs 7 to 12. Against these, our N=2 fits average 6.67 (mean +1.05 points, range +0.45 to
++1.77), so the implementation-check rule above ('within 1.0 point on at least 4 of 6 steels') is met on 3 of 6 steels only. The
+statement that the Voce-Chaboche fits of the original paper were reproduced to within 0.5 points is withdrawn. The statement that
+bars buckle in the Context paragraph is also unresolved in the literature (Kashani et al. 2019 describe their L/D 5 bars as not
+buckled).

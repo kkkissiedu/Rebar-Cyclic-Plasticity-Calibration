@@ -179,13 +179,16 @@ yield fitted, and the published error metric (UVC Eqs. 30-33).
 | Joint fit of five protocols | 7.83 | 6.67 | 6.26 |
 | Leave-one-protocol-out (held-out protocol) | 10.40 | 8.55 | 8.30 |
 
-* Our N = 2 result is within 0.5 points of the published Voce-Chaboche error on all six steels
-  (mean 6.67 against 6.65), which checks the objective, optimiser and integrator against the literature.
+* Our N = 2 error averages 6.67 %. The open companion paper (de Castro e Sousa, Hartloper and Lignos, J. Eng.
+  Mech. 2021) gives 5.63 % for Voce-Chaboche fits of the same six steels, so our fits are about one point higher
+  (0.45 to 1.77 per steel). The objective is the authors' own error metric. An earlier version of this README
+  quoted a closer match to six values that could not be traced to a source; those values were withdrawn.
 * One backstress is about 25 % worse than three, in-sample and held-out, and more than 20 % worse on
   four of six steels, so it does not meet the pre-set sufficiency rule. Two backstresses are within
   7 % (in-sample) and 3 % (held-out) of three. The UVC papers also use two.
 * Parameters are poorly identified: 5, 11 and 14 of 18 fits touch a limit of the parameter box for
-  N = 1, 2, 3. Only aggregates such as the total backstress are stable.
+  N = 1, 2, 3. Only aggregates such as the total backstress are stable. The seed-to-seed spread of the N = 2 error reaches 0.95 points, as large as the
+  differences from the published fits.
 
 ### Rebar data, point-level calibration (V3)
 
@@ -228,7 +231,7 @@ compliance is a spring in series, with stiffness taken from the fitted E.
 
 | Result (mean of bars) | N = 1 | N = 2 | N = 3 |
 |---|---|---|---|
-| Point level, cycles 4-6 error, 12 bars, non-softening (MPa) | 78.2 | 78.8 | 79.1 |
+| Point level, cycles 4-6 error, 11 bars, non-softening (MPa) | 78.2 | 78.8 | 79.1 |
 | Point level, softening allowed (MPa) | 56.3 | 50.5 | 49.8 |
 | Another strain amplitude of the same diameter, non-softening (MPa) | 115.6 | 126.3 | 128.6 |
 | ABAQUS coupon, cycles 4-6 error, 6 bars, non-softening (MPa) | 53.9 | 44.6 | 39.1 |
@@ -246,18 +249,24 @@ The earlier coupon runs with the V3 parameters gave 89.9 MPa (V3-F) and 105.6 MP
 
 What the results say:
 
-* The coupon check passes the pre-set criteria for every N (mean error at most 67.4 MPa, tension-peak decay gap
-  below 12.9 points), and the coupon now agrees with the experiment better than with the V3 parameters. On the
-  10 and 16 mm bars, where the V3-F and V4-T baselines were run, the mean error is 63.3, 50.5 and 41.8 MPa for
-  N = 1, 2, 3 against 89.9 and 105.6 MPa, and the decay gap is 9.0, 8.1 and 9.1 points against 12.9 and 16.2.
-  Adding the 12 mm bars lowers the means to the values in the table above.
+* The coupon runs meet the criteria we set for them (mean error at most 67.4 MPa, tension-peak decay gap below
+  12.9 points), but they are not a verification of the calibration. The perfect coupon, which has no imposed
+  imperfection, bows sideways from the first compression (mean mid-height deflection of 3.7, 6.2 and 9.2 mm for
+  the 10, 12 and 16 mm bars in the runs inspected at 5 % strain, at or above the bar radius), the mid-section is
+  in bending, and the coupon fits the experiment better than the material-point model it implements on all 18
+  records (45.9 against 83.0 MPa on average). The isotropic term is inactive in every fit, yet the coupon's peak
+  stress falls every cycle, so the decay comes from geometry. On the 10 and 16 mm bars the coupon error is 63.3,
+  50.5 and 41.8 MPa against 89.9 and 105.6 MPa for the earlier V3 parameters (V3-F, V4-T). The coupon and
+  point-level errors use different definitions and are not directly comparable.
 * The point-level success rule was not met: the non-softening N = 2 error is 78.8 MPa against a limit of 48.6 MPa.
   The non-softening constraint costs accuracy at the point level, and the three N give the same error there
   because the constraint dominates.
-* One backstress is not sufficient by the pre-set rule in the coupon: its error is 1.38 times that of three
-  backstresses and more than 20 % worse on 4 of 6 bars. On the 12 mm bars it is as good as three (35.6 against
-  35.3 and 34.3 against 32.1 MPa), on 16 mm it is 12 and 13 MPa worse, on 10 mm 21 and 40 MPa worse. Two
-  backstresses narrowly miss the rule (ratio 1.14).
+* The number of backstresses is not resolved on the rebar data. The rule fixed in advance for the point-level
+  fits gives one backstress as sufficient (error ratios 0.99 and 1.00 against three), although no number of
+  backstresses meets the absolute point-level limit. Applying the same ratio rule to the coupon, a test added
+  after the coupon results were seen, gives 1.38 for one backstress (more than 20 % worse on 4 of 6 bars) and
+  1.14 for two. On the 12 mm bars one backstress is as good as three, on 16 mm it is 12 and 13 MPa worse, on
+  10 mm 21 and 40 MPa worse. With the bowing above and a single seed, those ratios are indicative at most.
 * Fits that allow softening are better at the point level but unusable in the coupon: the yield stress falls
   towards zero and the errors are 114-233 MPa.
 * Parameters are poorly identified. The isotropic term sits on a limit of its box in nearly all fits, so it is
@@ -272,11 +281,11 @@ protocol, and only the final runs are reported.
 
 ### What is established and what is not
 
-* Established: the calibration method reproduces published fit errors on extensometer data; two backstresses
-  are the minimum there, and one backstress costs about 25 % more error; on the rebar coupon, one backstress
-  costs about 38 % more than three and two about 14 % more; the rebar data are LVDT-measured (apparent modulus
-  54-74 GPa against about 200 GPa for the bar) and never stabilise: peak stress falls every cycle at high
-  strain amplitude, and the literature disagrees on whether bars of this slenderness (L/D 5) buckle.
+* Established: on extensometer data the calibration reaches the same order of fit error as published
+  Voce-Chaboche fits (ours about one point higher); there two backstresses are adequate and one backstress
+  costs about 25 % more error (pre-registered). The rebar data are LVDT-measured (apparent modulus 54-74 GPa
+  against about 200 GPa for the bar) and never stabilise: peak stress falls every cycle at high strain
+  amplitude, and the literature disagrees on whether bars of this slenderness (L/D 5) buckle.
 * Not established: validation of the rebar calibration on independent data; behaviour on the target scrap rebar;
   any result from extensometer-measured rebar LCF data (none was available). The rebar results are exploratory.
 
