@@ -386,3 +386,28 @@ Full literature survey with per-claim confidence ratings: `docs/literature-revie
 MIT - see `LICENSE`. The UVC user-material files under `calibration_app/umats/`
 carry their own MIT attribution to the original authors (see `LICENSE` and
 `calibration_app/umats/UVC_LICENSE_MIT.txt`).
+
+## Predictor (V7): life, peak-stress decay and loops from D, L/D and strain amplitude
+
+Open **Predict...** in the top bar, or call `calibration_app.predictor.predict_bar(D_mm, L_over_D, amplitude_pct, fy_mpa=540)`.
+
+Equations (all constants are in `calibration_app/predictor/predictor_params.json`):
+
+- Buckling parameter: `lp = (L/D) * sqrt(fy / 100)` (Dhakal and Maekawa form, as used by Kashani et al. 2019).
+- Life: `eps_a = eps_f * (2 Nf)^alpha`, with `ln eps_f = c0 + c1 lp + c2 D` and `alpha = a0 + a1 lp + a2 D` (Koh-Stephens form).
+- Cycle-2 peaks: `ln sigma_2 = b0 + b1 ln(eps_a) (+ b2 lp)`, separately for tension and compression.
+- Decay: `sigma(n) = sigma_2 * g(n / Nf)`, an empirical master curve with coefficients linear in 1, L/D and amplitude.
+- Loops: Chaboche (N = 2) core integrated numerically, elastic slope from machine compliance `1/E_app = 1/E_bar + (pi D / (4 L/D)) / k_m`,
+  distorted for buckling and averaged over the log-normal life scatter (ASTM E739 treatment).
+
+Fitted on one steel (B500C, Kashani et al. 2019; D 10 to 20 mm, L/D 5 to 15, 1 to 6 % strain, LVDT strain). The shipped parameters are the same
+procedure refitted on all 120 files; the validation in `docs/protocols/V7_PROTOCOL.md` (sealed 16 mm bars: median loop error 39 MPa against 94 MPa for the
+no-degradation baseline, life within a factor of 2 for all 30 bars) refers to the 90-file fit. Weak spot: L/D 5 at 4 to 6 % strain is worse than the baseline.
+Use on another steel is untested; the factors `f_s` (stress level) and `f_e` (life) exist for rescaling from a few tests but are not validated on a second steel.
+See `docs/protocols/V7_EVIDENCE.md` for the evidence behind every component.
+
+Export: in the Predict window, **Export CSV...** writes `Time, Cycle, Position mm, Load kN, Strain %, Stress MPa` (the actuator channels laid out like the
+Kashani test files, 20 s per cycle, with the inputs and warnings as `#` comment lines); **Export PNG...** writes `<name>_loops.png` and `<name>_peaks.png`.
+The "Cycles" box picks which cycles to export (blank = cycle 2 and four points of the predicted life).
+
+![Predictor example](figures/predictor-example.png)

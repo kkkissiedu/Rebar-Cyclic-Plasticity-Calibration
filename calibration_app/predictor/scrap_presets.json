@@ -1,0 +1,16 @@
+{
+ "status": "HYPOTHESIS, UNTESTED: stress-level factors from monotonic tension only; no cyclic test of these bars has checked them.",
+ "anchor": {
+  "source": "Moodley, Afshan and De Risi (2024), Structures, Table 2: B500C 12 and 16 mm, four tension tests, 50 mm clip-on extensometer",
+  "fy_mpa": 577.0,
+  "fu_mpa": 669.0,
+  "note": "That these bars match the Kashani et al. (2019) bars is NOT confirmed. If they differ in strength, every factor shifts by the same ratio."
+ },
+ "rule": "f_s = Rm_scrap / fu_anchor (uses every complete bar); f_s_ry = Ry_scrap / fy_anchor is given for comparison (0.2 % proof stress, clean-extensometer bars only). f_e = 1: no life factor can be computed from these files.",
+ "presets": [
+  {"name": "Scrap source A", "n_bars_rm": 6, "n_bars_ry": 3, "rm_mean_mpa": 578, "ry_mean_mpa": 513, "f_s_rm": 0.864, "f_s_ry": 0.889, "f_e": 1.0},
+  {"name": "Scrap source B", "n_bars_rm": 6, "n_bars_ry": 1, "rm_mean_mpa": 712, "ry_mean_mpa": 620, "f_s_rm": 1.063, "f_s_ry": 1.075, "f_e": 1.0},
+  {"name": "Scrap source C", "n_bars_rm": 6, "n_bars_ry": 3, "rm_mean_mpa": 725, "ry_mean_mpa": 623, "f_s_rm": 1.083, "f_s_ry": 1.080, "f_e": 1.0},
+  {"name": "Scrap source D", "n_bars_rm": 6, "n_bars_ry": 1, "rm_mean_mpa": 644, "ry_mean_mpa": 483, "f_s_rm": 0.962, "f_s_ry": 0.837, "f_e": 1.0}
+ ]
+}

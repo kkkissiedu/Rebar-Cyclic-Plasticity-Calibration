@@ -89,6 +89,7 @@ class AppWindow:
         self.btn_stop.pack(side="left", padx=2)
         ttk.Button(top, text="Sessions...", command=self._open_sessions).pack(side="left", padx=2)
         ttk.Button(top, text="Settings...", command=self._open_settings).pack(side="left", padx=2)
+        ttk.Button(top, text="Predict...", command=self._open_predictor).pack(side="left", padx=2)
         ttk.Button(top, text="Export best...", command=self._export_best).pack(side="left", padx=2)
         self.btn_transfer = ttk.Button(top, text="Transfer to CAE",
                                        command=self._transfer_to_cae, state="disabled")
@@ -671,6 +672,10 @@ class AppWindow:
     def _open_settings(self) -> None:
         from .settings_dialog import open_settings
         open_settings(self.root)
+
+    def _open_predictor(self) -> None:
+        from .predictor_window import PredictorWindow
+        PredictorWindow(self.root)
 
     # -- results summary + export ---------------------------------------------
     def _show_summary(self) -> None:
