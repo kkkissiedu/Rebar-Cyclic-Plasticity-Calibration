@@ -1,17 +1,11 @@
-# Core dependencies for the surrogate pipeline (no ABAQUS required).
+# For use without conda (Python 3.10 to 3.12, with tkinter included in the Python install):
+#   python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt
+# Versions the app was developed and tested with: Python 3.12, numpy 1.26, scipy 1.15, numba 0.59,
+# matplotlib 3.8, optuna 4.7.
 numpy>=1.23
-scipy>=1.10           # differential_evolution, Sobol (scipy.stats.qmc)
-matplotlib>=3.6        # live stress-strain plot (TkAgg) + comparison plots
-optuna>=3.0             # Bayesian / TPE optimiser
-numba>=0.58             # JIT for the three constitutive-model integrators
-
-# Optional: a modern ttk theme. If absent, the app falls back to a manual
-# dark/light ttk palette (calibration_app/ui/theme.py).
+scipy>=1.10
+numba>=0.59
+matplotlib>=3.6
+optuna>=3.0
+# Optional: a modern theme for the interface (the app falls back to a built-in theme without it).
 # sv-ttk
-
-# tkinter ships with the standard library on most Python distributions.
-
-# The FE-in-the-loop backend and "Transfer to CAE" additionally require a
-# licensed ABAQUS 2024 install (not a pip dependency) and, for the UVC /
-# Ohno-Wang user-material models, an MSVC C++ toolchain (Visual Studio
-# Build Tools) on Windows -- see docs/ and calibration_app/umats/.

@@ -129,6 +129,7 @@ def _uvc_integrate_impl(eps, C, g, Q, b, D, a, E, sy0):
                 alpha_k_init[k] = alpha_k[k]
             dp = 0.0
             it = 0
+            conv = False
             while it < _UVC_MAXIT:
                 it += 1
                 sig_c = sig0 - E * s * dp
@@ -144,6 +145,7 @@ def _uvc_integrate_impl(eps, C, g, Q, b, D, a, E, sy0):
                 yr = sig_c - al
                 f = s * yr - sy                     # residual = |yr| - sy
                 if abs(f) < 1.0e-9 * (sy0 + abs(yr)):   # relative convergence
+                    conv = True
                     break
                 # -df/ddp = aux + d(sy)/ddp  (positive for hardening)
                 dfa = aux + Q * b * np.exp(-b * pp) - D * a * np.exp(-a * pp)
@@ -153,6 +155,10 @@ def _uvc_integrate_impl(eps, C, g, Q, b, D, a, E, sy0):
                 if dp_new < 0.0:
                     dp_new = 0.5 * dp
                 dp = dp_new
+            if not conv:                            # unconverged step: invalidate the rest of the path
+                for j in range(i, n):
+                    sig_out[j] = np.nan
+                return sig_out
             # commit the converged plastic state
             sigma = sig0 - E * s * dp
             p = p_init + dp

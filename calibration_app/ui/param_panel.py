@@ -23,18 +23,16 @@ class ParamPanel:
 
     def __init__(self, parent) -> None:
         self.frame = ttk.LabelFrame(parent, text="Parameters")
+        # one compact table: name | last run | best so far | unit
         self.frame.columnconfigure(0, weight=1)
-        self.frame.columnconfigure(1, weight=1)
-
-        self._sub_last = ttk.LabelFrame(self.frame, text="Last run")
-        self._sub_last.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
-        self._sub_best = ttk.LabelFrame(self.frame, text="Best so far")
-        self._sub_best.grid(row=0, column=1, sticky="nsew", padx=2, pady=2)
+        self._table = ttk.Frame(self.frame)
+        self._table.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
+        for c in (1, 2):
+            self._table.columnconfigure(c, weight=1, uniform="val")
 
         self._btn_copy = ttk.Button(self.frame, text="Copy best -> ABAQUS block",
                                     command=self._copy_best, state="disabled")
-        self._btn_copy.grid(row=1, column=0, columnspan=2, sticky="we",
-                            padx=4, pady=4)
+        self._btn_copy.grid(row=1, column=0, sticky="we", padx=4, pady=4)
 
         self._model = None
         self._w_last: dict[str, ttk.Label] = {}
@@ -48,28 +46,31 @@ class ParamPanel:
         """Rebuild the tables for a model and record elastic constants."""
         self._model = model
         self._elastic = {"E": E, "nu": nu, "sy0": sy0}
-        self._w_last = self._build_table(self._sub_last, model)
-        self._w_best = self._build_table(self._sub_best, model)
+        self._w_last, self._w_best = self._build_table(self._table, model)
         self._best_params = None
         self._best_sy0 = None
         self._btn_copy.configure(state="disabled")
 
     @staticmethod
-    def _build_table(parent: ttk.LabelFrame, model) -> dict[str, ttk.Label]:
+    def _build_table(parent: ttk.Frame, model) -> tuple[dict, dict]:
         for child in parent.winfo_children():
             child.destroy()
-        widgets: dict[str, ttk.Label] = {}
+        last: dict[str, ttk.Label] = {}
+        best: dict[str, ttk.Label] = {}
         rows = list(model.param_names) + ["sigma_y0", "_obj"]
         units = list(model.param_units) + ["MPa", "MPa"]
         labels = list(model.param_names) + ["sigma_y0", "objective"]
-        for i, (key, lab, unit) in enumerate(zip(rows, labels, units)):
+        ttk.Label(parent, text="Last run", style="Muted.TLabel").grid(row=0, column=1, sticky="e", padx=4)
+        ttk.Label(parent, text="Best so far", style="Muted.TLabel").grid(row=0, column=2, sticky="e", padx=4)
+        for i, (key, lab, unit) in enumerate(zip(rows, labels, units), start=1):
             ttk.Label(parent, text=lab).grid(row=i, column=0, sticky="w", padx=4)
-            val = ttk.Label(parent, text="-", width=12, anchor="e")
-            val.grid(row=i, column=1, sticky="e", padx=4)
+            for col, store in ((1, last), (2, best)):
+                val = ttk.Label(parent, text="-", width=8, anchor="e")
+                val.grid(row=i, column=col, sticky="e", padx=4)
+                store[key] = val
             ttk.Label(parent, text=unit, style="Muted.TLabel").grid(
-                row=i, column=2, sticky="w", padx=4)
-            widgets[key] = val
-        return widgets
+                row=i, column=3, sticky="w", padx=4)
+        return last, best
 
     # -- updates -------------------------------------------------------------
     def set_last(self, params: Sequence[float], objective: float,

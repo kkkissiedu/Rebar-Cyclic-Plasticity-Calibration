@@ -9,9 +9,9 @@ Re-runs the pipeline with the exact config + bounds of an existing session
 directory as always -- nothing is overwritten. Use it to produce the
 N=2 vs N=3 justification runs and any reproducibility repeats.
 
-Usage (from the repo root):
+Usage (cuda_pt python, from the project root):
 
-    python scripts/run_calibration_headless.py --from-session calibration_sessions/<dir>
+    python run_calibration_headless.py --from-session calibration_sessions/<dir>
         [--n-backstresses 2] [--model chaboche|uvc|ohno_wang]
         [--no-stage3] [--tag "paper N2"]
 
@@ -27,8 +27,7 @@ import queue
 import sys
 import threading
 
-# repo root = parent of scripts/
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from calibration_app.core import data_loader, pipeline as pipeline_mod
 from calibration_app.session.session_manager import SessionManager
@@ -91,9 +90,10 @@ def main() -> int:
                                        + " " + args.tag).strip()
     cfg["run_all_models"] = False
 
-    data = data_loader.load_experimental(
+    data = data_loader.load_any_experimental(
         cfg["data_file"], gauge_length_mm=cfg["gauge_length_mm"],
         bar_diameter_mm=cfg["diameter_mm"], sigma_y0=cfg["sigma_y0"])
+    cfg["loading_mode"] = data.get("loading_mode", "cyclic")
     print(f"Loaded {os.path.basename(cfg['data_file'])}: "
           f"{data['cycle_summary']['total_cycles']} cycles, "
           f"peak {data['measured_peak_stress']:.1f} MPa")

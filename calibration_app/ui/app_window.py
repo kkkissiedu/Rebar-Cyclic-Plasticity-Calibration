@@ -88,6 +88,7 @@ class AppWindow:
         self.btn_stop = ttk.Button(top, text="Stop", command=self._stop, state="disabled")
         self.btn_stop.pack(side="left", padx=2)
         ttk.Button(top, text="Sessions...", command=self._open_sessions).pack(side="left", padx=2)
+        ttk.Button(top, text="Settings...", command=self._open_settings).pack(side="left", padx=2)
         ttk.Button(top, text="Export best...", command=self._export_best).pack(side="left", padx=2)
         self.btn_transfer = ttk.Button(top, text="Transfer to CAE",
                                        command=self._transfer_to_cae, state="disabled")
@@ -151,7 +152,7 @@ class AppWindow:
 
     def _refresh_model_panels(self) -> None:
         model = self._current_model()
-        self.params.set_model(model, E=E_FIXED, nu=NU_FIXED,
+        self.params.set_model(model, E=float(self.config.var_E.get() or E_FIXED), nu=NU_FIXED,
                               sy0=float(self.config.var_sy0.get()))
         self.config.rebuild_bounds(model)
 
@@ -212,15 +213,16 @@ class AppWindow:
         self.plot.set_view(model_key)
         try:
             model = pipeline_mod.build_model(model_key, cfg.get("n_backstresses", 3))
+            E_run = float(cfg.get("E_modulus") or E_FIXED)
             best_sy0 = state.get("best_sigma_y0") or cfg.get("sigma_y0") or float(self.config.var_sy0.get())
             dw = slice_window(self.data, min(6, cfg.get("n_fit", 6)))
             burn = dw.get("burnin_strain")
             strain = dw["strain"]
             if burn is not None and np.size(burn) > 0:
                 full = np.concatenate([np.asarray(burn), strain])
-                sig = model.simulate(full, best_params, E=E_FIXED, sy0=best_sy0)[np.size(burn):]
+                sig = model.simulate(full, best_params, E=E_run, sy0=best_sy0)[np.size(burn):]
             else:
-                sig = model.simulate(strain, best_params, E=E_FIXED, sy0=best_sy0)
+                sig = model.simulate(strain, best_params, E=E_run, sy0=best_sy0)
             if np.all(np.isfinite(sig)):
                 # per-model curve (not generic update_best): generic best/last
                 # are live-progress only and stay hidden while idle, so a
@@ -314,7 +316,7 @@ class AppWindow:
         self.stop_event.clear()
         pipe = pipeline_mod.CalibrationPipeline(
             self.gui_queue, self.stop_event, self.sessions, self.data, cfg,
-            bounds, E=E_FIXED, nu=NU_FIXED)
+            bounds, E=float(cfg["E_modulus"]), nu=NU_FIXED)
         self.thread = threading.Thread(target=pipe.run, daemon=True)
         self.thread.start()
         self.btn_stop.configure(state="normal")
@@ -397,6 +399,7 @@ class AppWindow:
                     self._log("Pipeline finished.")
                     self.plot.set_running_model(None)
                     self.plot.clear_last()
+                    self._show_summary()
                 elif kind == "transfer_done":
                     self._on_transfer_done(p)
                 elif kind == "fecomp_done":
@@ -554,7 +557,8 @@ class AppWindow:
 
         def worker():
             import subprocess
-            cmd = ["abaqus", "python", script, "--", odb, exp_csv]
+            from ..settings import resolve_abaqus
+            cmd = [resolve_abaqus(), "python", script, "--", odb, exp_csv]
             try:
                 proc = subprocess.run(cmd, cwd=os.path.dirname(odb),
                                       timeout=900, capture_output=True,
@@ -664,13 +668,28 @@ class AppWindow:
         self.log.configure(bg=self.pal["field"], fg=self.pal["fg"],
                            insertbackground=self.pal["fg"])
 
-    # -- export --------------------------------------------------------------
+    def _open_settings(self) -> None:
+        from .settings_dialog import open_settings
+        open_settings(self.root)
+
+    # -- results summary + export ---------------------------------------------
+    def _show_summary(self) -> None:
+        """Open the one-page results view for the run that just finished (newest session)."""
+        infos = self.sessions.list_sessions()
+        if not infos:
+            return
+        try:
+            from .summary_window import show_summary
+            show_summary(self.root, infos[0].path)
+        except Exception as exc:                                     # noqa: BLE001
+            self._log(f"Results summary unavailable: {exc}")
+
     def _export_best(self) -> None:
         infos = self.sessions.list_sessions()
         if not infos:
             messagebox.showinfo("No sessions", "Run a calibration first.")
             return
-        best = min(infos, key=lambda i: i.best_objective)
+        best = infos[0]                      # the latest run, not the best of unrelated earlier sessions
         src = os.path.join(best.path, "best_material_block.txt")
         if not os.path.exists(src):
             messagebox.showinfo("Nothing to export", "No best block yet.")

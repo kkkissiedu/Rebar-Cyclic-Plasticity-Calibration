@@ -44,7 +44,7 @@ MIN_GAMMA: float = 1.0e-6
 #: Isotropic saturation-rate window. b<~0.1 is effectively no saturation over a
 #: realistic accumulated-plastic-strain range; b>~50 saturates within the first
 #: reversal and risks exp() underflow. Kept wide; the model's default bounds are
-#: tighter (2-40) but the user may widen them for scrap rebar.
+#: tighter (about 1-15) but the user may widen them for scrap rebar.
 MIN_B: float = 0.1
 MAX_B: float = 60.0
 
@@ -262,17 +262,16 @@ class PhysicsGate:
         return tuple(vals)
 
     # -- the gate ------------------------------------------------------------
-    def is_valid(self, model, params: Sequence[float]) -> bool:
-        """True if ``params`` are physically consistent with the loaded data."""
-        return self.reason(model, params) is None
 
-    def reason(self, model, params: Sequence[float]) -> str | None:
+    def reason(self, model, params: Sequence[float], sy0: float = None) -> str | None:
         """Return the first failure reason, or None if the candidate is valid.
 
         ``model`` is any :class:`~calibration_app.core.surrogate.CyclicPlasticityModel`;
         only its ``param_names`` are used, so the gate stays model-agnostic.
         """
         names = tuple(model.param_names)
+        if sy0 is None:
+            sy0 = self.data.sigma_y0
 
         # 1. gamma_k > 0
         for name, val in zip(names, params):
@@ -298,7 +297,7 @@ class PhysicsGate:
         # 3. kinematic saturation vs observed hardening headroom
         sat = self._kinematic_saturation(names, params)
         if sat is not None:
-            cap = self.max_saturation_factor * self.data.stress_above_yield
+            cap = self.max_saturation_factor * self._headroom(sy0)
             if sat > cap:
                 return (f"kinematic saturation {sat:.0f} MPa exceeds "
                         f"{self.max_saturation_factor}x observed stress-above-"
@@ -307,7 +306,6 @@ class PhysicsGate:
         # 4. saturated yield floor (relative to sigma_y0, not to a grade)
         Q = self._get(names, params, "Q_inf")
         if Q is not None:
-            sy0 = self.data.sigma_y0
             if (sy0 + Q) < self._yield_fraction * sy0:
                 return (f"saturated yield {sy0 + Q:.0f} MPa below "
                         f"{self._yield_fraction:.0%} of sigma_y0 ({sy0:.0f})")

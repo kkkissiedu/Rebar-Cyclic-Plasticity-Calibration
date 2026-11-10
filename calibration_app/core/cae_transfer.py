@@ -400,7 +400,7 @@ def main():
             break
     if target_mat is None:
         fail("no material with *PLASTIC HARDENING=COMBINED found in %s"
-             % cae_path)
+             % copy_path)
     log("Material: %s (model %s)" % (target_mat.name, target_model.name))
 
     # --- 0. geometry: rebuild the copy's cylinder if the session differs ---
@@ -874,7 +874,8 @@ def run_transfer_script(script_path: str, abaqus_cmd: str = "abaqus",
             os.remove(log_path)
         except OSError:
             pass
-    cmd = [abaqus_cmd, "cae", f"noGUI={os.path.basename(script_path)}"]
+    from ..settings import resolve_abaqus
+    cmd = [resolve_abaqus(abaqus_cmd), "cae", f"noGUI={os.path.basename(script_path)}"]
     try:
         proc = subprocess.run(cmd, cwd=workdir, timeout=timeout_s,
                               capture_output=True, text=True,
@@ -910,6 +911,7 @@ def build_umat_library(tcfg: dict, abaqus_cmd: str = "abaqus",
     if tcfg.get("material_mode") != "user":
         return True, "native material - no user-subroutine library needed"
     from .abaqus_runner import _UMAT_ENV_OVERRIDE, _find_vcvars
+    from ..settings import resolve_abaqus as _resolve_abaqus
     cae_dir = os.path.dirname(os.path.abspath(tcfg["cae_path"]))
     umat = tcfg["umat_source"]
     vcvars = _find_vcvars()
@@ -925,7 +927,7 @@ def build_umat_library(tcfg: dict, abaqus_cmd: str = "abaqus",
                 "# user subroutine on the job.\n")
         f.write("usub_lib_dir=r'%s'\n" % cae_dir)
     cmd = ('cd /d "%s" && call "%s" >nul 2>&1 && %s make library="%s" '
-           % (cae_dir, vcvars, abaqus_cmd, umat))
+           % (cae_dir, vcvars, _resolve_abaqus(abaqus_cmd), umat))
     try:
         proc = subprocess.run('cmd /s /c "%s"' % cmd, timeout=timeout_s,
                               capture_output=True, text=True)

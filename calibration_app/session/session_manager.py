@@ -35,7 +35,9 @@ from typing import Optional, Sequence
 
 from .checkpoint import CSVLogger, atomic_write_json, load_json
 
-DEFAULT_ROOT = "calibration_sessions"
+from ..settings import sessions_root
+
+DEFAULT_ROOT = sessions_root()
 SESSION_JSON = "session.json"
 LOG_CSV = "calibration_log.csv"
 BEST_BLOCK = "best_material_block.txt"
@@ -123,25 +125,6 @@ class Session:
 
     def set_stage(self, stage: str) -> None:
         self.state["stage"] = stage
-        self.save()
-
-    def archive_current_as_prior(self) -> None:
-        """Move the current best/stage into ``prior_runs`` before a restart.
-
-        This preserves earlier Stage-2/3 results as a record rather than losing
-        them when the user restarts from an earlier stage.
-        """
-        if "best_objective" not in self.state:
-            return
-        prior = self.state.setdefault("prior_runs", [])
-        prior.append({
-            "archived": time.strftime("%Y-%m-%dT%H:%M:%S"),
-            "stage": self.state.get("stage"),
-            "best_params": self.state.get("best_params"),
-            "best_objective": self.state.get("best_objective"),
-            "best_source": self.state.get("best_source"),
-            "n_evals": self.logger.count(),
-        })
         self.save()
 
     # -- metadata ------------------------------------------------------------

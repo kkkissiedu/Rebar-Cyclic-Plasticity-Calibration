@@ -112,6 +112,16 @@ class ConfigPanel:
                    command=self._browse_monotonic).grid(row=r, column=2, padx=4)
         r += 1
 
+        ttk.Label(self.frame, text="Elastic modulus E (MPa):").grid(row=r, column=0, sticky="w", padx=4)
+        self.var_E = tk.DoubleVar(value=200000.0)
+        e_entry = ttk.Entry(self.frame, textvariable=self.var_E, width=10)
+        e_entry.grid(row=r, column=1, sticky="w", padx=4)
+        Tooltip(e_entry, "Handbook value for steel is 200000 MPa. When the test strain comes from actuator or LVDT "
+                         "displacement the loops show a lower apparent modulus (about 55000-75000 MPa in the Kashani "
+                         "data) because the load train deflects. Enter that value to fit such loops, and treat the "
+                         "fitted yield and hardening as exploratory.")
+        r += 1
+
         yc = ttk.Frame(self.frame)
         yc.grid(row=r, column=0, columnspan=3, sticky="we", padx=2)
         self.var_calib_sy0 = tk.BooleanVar(value=True)
@@ -120,7 +130,9 @@ class ConfigPanel:
         chk_sy0.grid(row=0, column=0, sticky="w", padx=2)
         Tooltip(chk_sy0, "The cyclic yield-surface size is smaller than the "
                          "monotonic yield (Bauschinger). Fit it in "
-                         "[lower, sigma_y0]; sigma_y0 above is the upper limit.")
+                         "[lower, sigma_y0]; sigma_y0 above is the upper limit. Both limits are "
+                         "starting values that bound the search, not material properties: a fitted value "
+                         "sitting on a limit only reflects that limit.")
         ttk.Label(yc, text="lower:").grid(row=0, column=1, sticky="e", padx=2)
         self.var_sy0_lower = tk.DoubleVar(value=150.0)
         ttk.Entry(yc, textvariable=self.var_sy0_lower, width=8).grid(row=0, column=2, padx=2)
@@ -207,10 +219,8 @@ class ConfigPanel:
         self.var_de_popsize = _slider(self._adv, a, "DE popsize", 5, 60, 20); a += 1
         self.var_trials = _slider(self._adv, a, "Bayesian trials", 20, 1000, 200,
                                   on_change=self._update_hints); a += 1
-        self.var_topk = _slider(self._adv, a, "Sobol top-K seeds", 1, 30, 10); a += 1
         self.var_topm = _slider(self._adv, a, "ABAQUS top-M verify", 1, 10, 3); a += 1
-        self.var_jobs = _slider(self._adv, a, "Concurrent ABAQUS jobs", 1, 8, 1); a += 1
-        self.var_weight = tk.BooleanVar(value=True)
+        self.var_weight = tk.BooleanVar(value=False)   # off by default: the weight does not cover the reversals (audit B5)
         ttk.Checkbutton(self._adv, text="Weight reversal regions (1.5x)",
                         variable=self.var_weight).grid(row=a, column=0, columnspan=2, sticky="w", padx=4); a += 1
         self.var_stage3 = tk.BooleanVar(value=False)
@@ -323,6 +333,7 @@ class ConfigPanel:
             "sigma_y0": float(self.var_sy0.get()),
             "calibrate_sy0": bool(self.var_calib_sy0.get()),
             "sy0_lower": float(self.var_sy0_lower.get()),
+            "E_modulus": float(self.var_E.get()),
             "model": self.var_model.get(),
             "n_backstresses": int(self.var_nbs.get()),
             "run_all_models": bool(self.var_run_all.get()),
@@ -333,9 +344,7 @@ class ConfigPanel:
             "de_maxiter": int(self.var_de_maxiter.get()),
             "de_popsize": int(self.var_de_popsize.get()),
             "n_trials": int(self.var_trials.get()),
-            "top_k": int(self.var_topk.get()),
             "abaqus_top_m": int(self.var_topm.get()),
-            "concurrent_jobs": int(self.var_jobs.get()),
             "weight_reversals": bool(self.var_weight.get()),
             "run_stage3": bool(self.var_stage3.get()),
             "cae_path": self.var_cae_path.get().strip(),
@@ -351,6 +360,7 @@ class ConfigPanel:
             "n_trials": self.var_trials, "sigma_y0": self.var_sy0,
             "run_all_models": self.var_run_all,
             "calibrate_sy0": self.var_calib_sy0, "sy0_lower": self.var_sy0_lower,
+            "E_modulus": self.var_E,
             "material_description": self.var_material_desc,
         }
         for key, var in mapping.items():

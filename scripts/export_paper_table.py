@@ -16,10 +16,10 @@ Active-constraint detection (relative tolerance 1%):
   * saturated-yield floor sigma_y0 + Q_inf = yield_fraction * sigma_y0;
   * physics-gate b window.
 
-Usage (from the repo root):
+Usage (cuda_pt python, project root):
 
-    python scripts/export_paper_table.py                       # all sessions
-    python scripts/export_paper_table.py calibration_sessions/<dir> [...]
+    python export_paper_table.py                       # all sessions
+    python export_paper_table.py calibration_sessions/<dir> [...]
 
 Writes paper_table.md + paper_table.csv to the project root and prints the
 markdown table.
@@ -32,8 +32,7 @@ import json
 import os
 import sys
 
-# repo root = parent of scripts/
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from calibration_app.utils.physics_gate import (
     MIN_GAMMA_RATIO, DEFAULT_MIN_YIELD_FRACTION, MIN_B, MAX_B)

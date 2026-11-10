@@ -13,7 +13,7 @@ Backstress decomposition (Ohno & Wang 1993, Eq. 5):
     alpha = sum_{i=1}^{M} alpha_i
 
 Ohno-Wang I kinematic evolution - critical state of dynamic recovery, nonlinear
-form (Ohno & Wang 1993, Eq. 10; the bilinear Eq. 8 is the limit m_i -> inf):
+form (power-law recovery in the form of Ohno & Wang 1993; the equation number and the 'model I' label are not verified against the paper, and the exponent m here is one higher than in Ohno's later publications, so a fitted m is not comparable with literature values; the bilinear limit is m_i -> inf):
     dalpha_i = C_i*n*dp
                - C_i*(|alpha_i|/r_i)^{m_i} * <n * sign(alpha_i)> * sign(alpha_i)*dp
   where n = sign(sigma - alpha), dp = |d eps_p|, C_i = zeta_i*r_i is the initial

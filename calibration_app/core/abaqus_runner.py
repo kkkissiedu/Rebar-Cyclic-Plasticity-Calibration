@@ -30,7 +30,6 @@ from __future__ import annotations
 import os
 import subprocess
 import threading
-from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Sequence
 
 import numpy as np
@@ -69,22 +68,10 @@ link_sl=['LINK', '/nologo', '/NOENTRY', '/INCREMENTAL:NO',
          'advapi32.lib', 'msvcrt.lib', 'vcruntime.lib', 'ucrt.lib']
 """
 
-_VCVARS_CANDIDATES = (
-    r"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat",
-    r"C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat",
-    r"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat",
-    r"C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat",
-    r"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat",
-    r"C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat",
-)
-
-
 def _find_vcvars() -> Optional[str]:
-    """Locate vcvars64.bat (MSVC env) for C++ UMAT compilation."""
-    for p in _VCVARS_CANDIDATES:
-        if os.path.exists(p):
-            return p
-    return None
+    """Locate vcvars64.bat (MSVC env) for C++ UMAT compilation (see settings.vcvars_path)."""
+    from ..settings import vcvars_path
+    return vcvars_path()
 
 # ---------------------------------------------------------------------------
 # Runtime-written ABAQUS-Python extractor. The app writes this into the work
@@ -174,8 +161,6 @@ class FEBackend:
     axial_stress, axial_strain : str
         History components to extract (default ``S33``/``E33`` for the Z-axis
         specimen).
-    concurrent_jobs : int
-        Max simultaneous ABAQUS jobs for batch operations (default 1).
     weight_reversals : bool
         Passed through to the shared objective.
     """
@@ -197,14 +182,14 @@ class FEBackend:
         loading_mode: str = "cyclic",
         axial_stress: str = "S33",
         axial_strain: str = "E33",
-        concurrent_jobs: int = 1,
         weight_reversals: bool = True,
         timeout_s: int = 1800,
     ) -> None:
         self.model = model
         self.window = window
         self.work_dir = work_dir
-        self.abaqus_cmd = abaqus_cmd
+        from ..settings import resolve_abaqus
+        self.abaqus_cmd = resolve_abaqus(abaqus_cmd)
         self.E, self.nu, self.sy0 = E, nu, sy0
         self.gauge_length_mm = gauge_length_mm
         self.amp_mm = amp_mm
@@ -222,7 +207,6 @@ class FEBackend:
             self.n_cycles = int(n_cycles)
         self.axial_stress = axial_stress
         self.axial_strain = axial_strain
-        self.concurrent_jobs = max(1, int(concurrent_jobs))
         self.weight_reversals = weight_reversals
         self.timeout_s = timeout_s
         self._job_counter = 0
@@ -408,7 +392,7 @@ class FEBackend:
         except Exception:
             pass
 
-    def run_candidate(self, params: Sequence[float], sy0: float = None) -> Optional[tuple[np.ndarray, np.ndarray]]:
+    def run_candidate(self, params: Sequence[float], sy0: float = None, with_time: bool = False) -> Optional[tuple]:
         """Run one single-element job; return (strain, stress) or None on failure.
 
         On any failure path the captured ABAQUS stdout+stderr is written to
@@ -470,11 +454,16 @@ class FEBackend:
         # BURNIN_CYCLES) so the caller only ever sees the n_cycles that match
         # the calibration window -- same contract as before this was added.
         cutoff = self.BURNIN_CYCLES * self.period_s
-        scored = arr[arr[:, 0] >= cutoff - 1e-9]
+        keep = arr[:, 0] >= cutoff - 1e-9
+        scored = arr[keep]
+        if with_time and keep.any() and int(np.argmax(keep)) > 0:
+            scored = arr[int(np.argmax(keep)) - 1:]   # keep the frame before the cutoff so cycle starts can be interpolated
         if scored.shape[0] < 4:
             self._write_stderr_log(job, "bad_csv_after_burnin_strip",
                                    "rows=%d cutoff=%s" % (scored.shape[0], cutoff), "")
             return None
+        if with_time:
+            return scored[:, 1], scored[:, 2], scored[:, 0]    # strain, stress, time
         return scored[:, 1], scored[:, 2]    # strain, stress (scored cycles only)
 
     def evaluate(self, params: Sequence[float], sy0: float = None) -> float:
@@ -484,20 +473,10 @@ class FEBackend:
         conditions are directly comparable. ``sy0`` overrides the yield stress
         per candidate when the yield is being calibrated.
         """
-        res = self.run_candidate(params, sy0)
+        res = self.run_candidate(params, sy0, with_time=True)
         if res is None:
             return objective_mod.PENALTY
-        strain, stress = res
-        return objective_mod.score_from_abaqus(strain, stress, self.window,
-                                               self.weight_reversals)
-
-    def evaluate_batch(self, param_sets: Sequence[Sequence[float]]) -> list[float]:
-        """Evaluate several candidates concurrently (up to ``concurrent_jobs``).
-
-        Used for Sobol seeding / top-M verification where independent jobs can
-        run in parallel; the optimiser loops still call :meth:`evaluate` serially.
-        """
-        if self.concurrent_jobs == 1:
-            return [self.evaluate(p) for p in param_sets]
-        with ThreadPoolExecutor(max_workers=self.concurrent_jobs) as ex:
-            return list(ex.map(self.evaluate, param_sets))
+        strain, stress, tt = res
+        return objective_mod.score_from_abaqus(
+            strain, stress, self.window, self.weight_reversals,
+            sim_time=tt, t0=self.BURNIN_CYCLES * self.period_s, period_s=self.period_s)

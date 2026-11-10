@@ -119,7 +119,9 @@ class CalibrationPipeline:
         display_window = slice_window(self.data, min(6, cfg["n_fit"]))
 
         # Grade-agnostic gate; Option C cross-amplitude peak (single file here).
-        ctx = DataContext.from_datasets(self.data, sigma_y0=self.sy0)
+        # peak stress of the calibration cycles only (not of the whole test to failure)
+        ctx = DataContext.from_datasets(
+            [{"measured_peak_stress": float(np.max(np.abs(window["stress"])))}], sigma_y0=self.sy0)
         gate = PhysicsGate(ctx)
 
         # Per-model bounds: the user's config bounds where the parameter name
@@ -165,7 +167,6 @@ class CalibrationPipeline:
                 gauge_length_mm=cfg["gauge_length_mm"], amp_mm=amp_mm,
                 n_cycles=len(window["target_cycles"]),
                 loading_mode=self.data.get("loading_mode", "cyclic"),
-                concurrent_jobs=cfg["concurrent_jobs"],
                 weight_reversals=cfg["weight_reversals"])
 
             def evaluate(x):
@@ -258,7 +259,7 @@ class CalibrationPipeline:
         self._send("stage", key="sobol", status="RUNNING", done=0, total=n_samples,
                    elapsed=0.0)
         seeds, s1 = search_mod.sobol_seed(
-            evaluate, search_bounds, n_samples=n_samples, top_k=cfg["top_k"],
+            evaluate, search_bounds, n_samples=n_samples, top_k=1,
             progress=make_progress(n_samples), stop=self.stop)
         self._send("stage", key="sobol",
                    status="DONE" if not s1.stopped else "FAILED",
@@ -321,14 +322,14 @@ class CalibrationPipeline:
             gauge_length_mm=cfg["gauge_length_mm"], amp_mm=amp_mm,
             n_cycles=len(window["target_cycles"]),
             loading_mode=self.data.get("loading_mode", "cyclic"),
-            concurrent_jobs=cfg["concurrent_jobs"],
             weight_reversals=cfg["weight_reversals"])
         sy0b = session.state.get("best_sigma_y0", self.sy0)
         # Run once and reuse the returned trace both for the objective and for
         # the plot overlay -- fe.evaluate() alone would re-run the same job.
-        res = fe.run_candidate(best, sy0=sy0b)
-        obj = (objective_mod.score_from_abaqus(res[0], res[1], window,
-                                               cfg["weight_reversals"])
+        res = fe.run_candidate(best, sy0=sy0b, with_time=True)
+        obj = (objective_mod.score_from_abaqus(
+                   res[0], res[1], window, cfg["weight_reversals"],
+                   sim_time=res[2], t0=fe.BURNIN_CYCLES * fe.period_s, period_s=fe.period_s)
                if res is not None else objective_mod.PENALTY)
         if res is None or obj >= objective_mod.PENALTY:
             self._status(f"[{key}] Stage 3 ABAQUS run failed "
@@ -336,7 +337,7 @@ class CalibrationPipeline:
             self._send("stage", key="abaqus", status="FAILED", done=0,
                        total=cfg["abaqus_top_m"], elapsed=time.time() - self._stage_t0)
             return
-        strain, stress = res
+        strain, stress, _ = res
         peak_t, peak_c = float(np.max(stress)), float(np.min(stress))
         session.state["fe_verification"] = {
             "objective_MPa": float(obj),

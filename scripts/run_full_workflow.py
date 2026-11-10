@@ -38,7 +38,7 @@ import sys
 import threading
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from calibration_app.core import cae_transfer, data_loader
 from calibration_app.core import pipeline as pipeline_mod
@@ -188,9 +188,8 @@ def run_comparison(cae_dir: str, exp_csv: str, abaqus_cmd: str = "abaqus") -> di
     if not os.path.exists(odb):
         log(f"no ODB at {odb} -- cannot compare")
         return {}
-    here = os.path.dirname(os.path.abspath(__file__))
-    proj_root = os.path.dirname(here)
-    script = os.path.join(here, "plot_fe_comparison.py")
+    proj_root = os.path.dirname(os.path.abspath(__file__))
+    script = os.path.join(proj_root, "plot_fe_comparison.py")
     # exp_csv is commonly relative to the project root (CLI --data), but
     # this subprocess runs with cwd=cae_dir -- resolve before that breaks it.
     exp_csv_abs = os.path.abspath(os.path.join(proj_root, exp_csv))
@@ -231,7 +230,7 @@ def main() -> int:
                     help="skip the single-element FE sanity check before transfer")
     ap.add_argument("--tag", default="")
     ap.add_argument("--cae-path", default=os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "FATIGUE_rebuilt.cae"))
+        os.path.dirname(os.path.abspath(__file__)), "FATIGUE_rebuilt.cae"))
     ap.add_argument("--wait-timeout", type=int, default=4 * 3600,
                     help="seconds to wait for the full-coupon solve (default 4h)")
     ap.add_argument("--skip-transfer", action="store_true",

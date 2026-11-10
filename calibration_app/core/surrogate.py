@@ -12,7 +12,7 @@ new subclass here and registering it in `MODEL_REGISTRY` - nothing else changes.
 Currently implemented
 ---------------------
 * ``ChabocheModel`` - native ABAQUS combined isotropic + nonlinear-kinematic
-  hardening with a **configurable number of backstresses** (2, 3 or 4).
+  hardening with a **configurable number of backstresses** (1 to 4).
   The discrete update is the same fully-implicit radial return ABAQUS uses at a
   uniaxial material point, so identified parameters transfer to ABAQUS exactly.
 
@@ -36,7 +36,6 @@ Fixed (not identified): E, sig_y0  (both are per-run inputs, not hardcoded).
 
 from __future__ import annotations
 
-import math
 from abc import ABC, abstractmethod
 from typing import Sequence
 
@@ -184,10 +183,6 @@ class CyclicPlasticityModel(ABC):
     def param_units(self) -> tuple[str, ...]:
         """Units for each parameter, same order as :attr:`param_names`."""
 
-    def n_params(self) -> int:
-        """Number of free (identified) parameters."""
-        return len(self.param_names)
-
     @abstractmethod
     def simulate(
         self,
@@ -248,7 +243,7 @@ class ChabocheModel(CyclicPlasticityModel):
     Parameters
     ----------
     n_backstresses : int
-        Number of kinematic backstresses (2, 3 or 4). Default 3 - the
+        Number of kinematic backstresses (1 to 4). Default 3 - the
         minimum-sufficient count for wide-range (1-6%) cyclic strain per the
         literature synthesis (see research_report.md, Q1B).
     """
@@ -373,9 +368,6 @@ class ChabocheModel(CyclicPlasticityModel):
 # Registry - the GUI/optimiser discover available models through this dict.
 # UVC and Ohno-Wang are registered here once their subclasses land.
 # ---------------------------------------------------------------------------
-def make_chaboche(n_backstresses: int = 3) -> ChabocheModel:
-    """Factory used by the registry so the GUI can pick the backstress count."""
-    return ChabocheModel(n_backstresses=n_backstresses)
 
 
 MODEL_REGISTRY: dict[str, str] = {

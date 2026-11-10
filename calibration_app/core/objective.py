@@ -150,6 +150,9 @@ def score_from_abaqus(
     sim_stress: np.ndarray,
     window: dict,
     weight_reversals: bool = True,
+    sim_time: np.ndarray = None,
+    t0: float = 0.0,
+    period_s: float = None,
 ) -> float:
     """Objective for the **FE backend**: score an ABAQUS response.
 
@@ -158,6 +161,13 @@ def score_from_abaqus(
     the comparison is reversal-aligned) and then passed to the identical
     :func:`score_hysteresis`. This guarantees the FE and surrogate objectives are
     the same function of the underlying response.
+
+    With ``sim_time`` and ``period_s`` the trace is split by time: scored cycle k
+    covers ``[t0 + k*period_s, t0 + (k+1)*period_s]`` and the response is
+    interpolated at both boundaries, so every cycle is complete even though the
+    output frames (automatic increments) rarely fall exactly on them. Without
+    them the trace is cut into equal point-count chunks, which is only right for
+    uniformly spaced output.
     """
     exp_strain = window["strain"]
     exp_cycle = window["cycle"]
@@ -166,10 +176,24 @@ def score_from_abaqus(
     if n_cyc == 0 or sim_strain.size < 4:
         return PENALTY
 
-    # Split the ABAQUS trace into n_cyc equal chunks (one per scored cycle).
-    chunk = sim_strain.size // n_cyc
-    if chunk < 4:
-        return PENALTY
+    if sim_time is not None and period_s:
+        t = np.asarray(sim_time, dtype=np.float64)
+        tol = 1e-6 * period_s
+        if t.size != sim_strain.size or t[-1] < t0 + n_cyc * period_s - tol:
+            return PENALTY                    # the analysis stopped before the last scored cycle
+
+        def segment(k):
+            lo, hi = t0 + k * period_s, t0 + (k + 1) * period_s
+            tt = np.concatenate([[lo], t[(t > lo + tol) & (t < hi - tol)], [hi]])
+            return np.interp(tt, t, sim_strain), np.interp(tt, t, sim_stress)
+    else:
+        chunk = sim_strain.size // n_cyc
+        if chunk < 4:
+            return PENALTY
+
+        def segment(k):
+            sl = slice(k * chunk, (k + 1) * chunk if k < n_cyc - 1 else sim_strain.size)
+            return sim_strain[sl], sim_stress[sl]
 
     resampled = np.empty_like(exp_strain, dtype=np.float64)
     for k, c in enumerate(target):
@@ -177,10 +201,8 @@ def score_from_abaqus(
         if idx.size < 4:
             resampled[idx] = np.nan
             continue
-        e_exp = exp_strain[idx]
-        sl = slice(k * chunk, (k + 1) * chunk if k < n_cyc - 1 else sim_strain.size)
-        e_sim, s_sim = sim_strain[sl], sim_stress[sl]
-        arc_exp = _arc(e_exp)
+        e_sim, s_sim = segment(k)
+        arc_exp = _arc(exp_strain[idx])
         arc_sim = _arc(e_sim)
         if arc_exp is None or arc_sim is None:
             resampled[idx] = np.nan
